@@ -1,0 +1,7 @@
+{
+    "python.defaultInterpreterPath": "<YOUR_PYTHON_EXE_IN_VIRTUALENV_PATH>",
+    "python.analysis.extraPaths": [
+        "src"
+    ]
+
+}
