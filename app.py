@@ -5,6 +5,8 @@ import plotly.express as px
 import unicodedata
 import plotly.graph_objects as go
 
+#TRANSFORMAR O RETORNO DA FUNÇÃO df_generate_uf_year_product em um dicionario e depois converter para dataframe
+#ADICIONAR novamente o filtro MAX E MIN
 
 
 df1=pd.read_excel('2001.xlsx')
@@ -26,17 +28,20 @@ products_list= df['PRODUTO'].drop_duplicates()
 year_list=df['MÊS'].dt.year.drop_duplicates()
 year_list.max()
 
+option_list = ['Max','Todos','Min']
 
 app = dash.Dash(__name__)
 
 app.layout = html.Div(id='div1',
     children=[
+        dcc.Store(id='store'),
         html.H1('Análise de preço dos combustiveis'),
         
         html.Label('Estados:'),
         dcc.Dropdown([{'label': uf, 'value':uf} for uf in uf_list],id='dp-uf'),
         html.Label('Produtos: '),
         dcc.Dropdown([{'label': product, 'value':product} for product in products_list], id='dp-product'),
+        dcc.Dropdown([{'label': option, 'value':option} for option in option_list], id='dp-option'),
         
         #html.Button(id='submit-button-state', children='Submit'),
         
@@ -54,23 +59,25 @@ app.layout = html.Div(id='div1',
 ])
 
 @app.callback(
-    Output('graph-uf', 'figure'),
+    Output('store', 'data'),
     Input('dp-uf', 'value'),
     Input('sd-year', 'value'),
     Input('dp-product', 'value')
-)
+) 
 def df_generate_uf_year_product(uf,year,product): 
     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
     if uf == 'Todos' or '':
         
         df_=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
         
-        #FORMATO PADRÃO (X[0],Y[1])
+        #FORMATO PADRÃO (X[0],Y[1], COLOR[3])
         final_df=df_.groupby('ESTADO', as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+        final_df['ESTADO(COLOR)']=final_df['ESTADO']
+        final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].max())]
         
-        fig=graph_generate(final_df,final_df.columns[0])
+        #fig=graph_generate(final_df,final_df.columns[0])
         
-        return fig
+        return final_df.to_dict()
     
     else:
         month_name = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
@@ -82,14 +89,38 @@ def df_generate_uf_year_product(uf,year,product):
         
         final_df = df_[['MÊS','PREÇO MÉDIO REVENDA','MÊS NOME']]
 
-        fig=graph_generate(final_df,final_df.columns[2])
+        return final_df.to_dict()
     
+ 
+@app.callback(
+    Output('graph-uf','figure'),
+    Input('store','data'),
+    Input('dp-option','value')
+)    
+def option_graph(df,option):
+    
+    #FORMATO PADRÃO (X[0],Y[1], COLOR[3])
+    df_ = pd.DataFrame(df)
+    
+    if option == 'Todos':
+        fig = px.bar(df_, x=df_.columns[0],y=df_.columns[1],color=df_.columns[2])
+        
+        return fig
+    elif option == 'Max':
+        final_df=df_[(df_['PREÇO MÉDIO REVENDA']==df_['PREÇO MÉDIO REVENDA'].max())]
+        
+        fig = px.bar(final_df, x=final_df.columns[0],y=final_df.columns[1],color=final_df.columns[2])
         return fig
     
-def graph_generate(df, color):
-    fig = px.bar(df, x=df.columns[0],y=df.columns[1],color=color)
+    elif option == 'Min':
+        final_df=df_[(df_['PREÇO MÉDIO REVENDA']==df_['PREÇO MÉDIO REVENDA'].min())]
+        
+        fig = px.bar(final_df, x=final_df.columns[0],y=final_df.columns[1],color=final_df.columns[2])
+        return fig
     
-    return fig
+
     
+    
+       
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8058)
+    app.run_server(debug=True,port=8060)
