@@ -95,28 +95,17 @@ def df_generate_uf_year_product(uf,year,product):
 @app.callback(
     Output('graph-uf','figure'),
     Input('store','data'),
-    Input('dp-option','value')
+
 )    
-def option_graph(df,option):
+def option_graph(df):
     
     #FORMATO PADRÃO (X[0],Y[1], COLOR[3])
     df_ = pd.DataFrame(df)
     
-    if option == 'Todos':
-        fig = px.bar(df_, x=df_.columns[0],y=df_.columns[1],color=df_.columns[2])
+    fig = px.bar(df_, x=df_.columns[0],y=df_.columns[1],color=df_.columns[2])
         
-        return fig
-    elif option == 'Max':
-        final_df=df_[(df_['PREÇO MÉDIO REVENDA']==df_['PREÇO MÉDIO REVENDA'].max())]
-        
-        fig = px.bar(final_df, x=final_df.columns[0],y=final_df.columns[1],color=final_df.columns[2])
-        return fig
-    
-    elif option == 'Min':
-        final_df=df_[(df_['PREÇO MÉDIO REVENDA']==df_['PREÇO MÉDIO REVENDA'].min())]
-        
-        fig = px.bar(final_df, x=final_df.columns[0],y=final_df.columns[1],color=final_df.columns[2])
-        return fig
+    return fig
+
     
 
     
