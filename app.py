@@ -23,12 +23,11 @@ for i in range(len(df1)):
 df= pd.concat([df1,df2])
  
 uf_list= df['ESTADO'].drop_duplicates().tolist()
-uf_list.append('Todos')
 products_list= df['PRODUTO'].drop_duplicates()
 year_list=df['MÊS'].dt.year.drop_duplicates()
 year_list.max()
 
-option_list = ['Max','Todos','Min']
+option_list = ['Brasil','Estados']
 
 app = dash.Dash(__name__)
 
@@ -41,7 +40,8 @@ app.layout = html.Div(id='div1',
         dcc.Dropdown([{'label': uf, 'value':uf} for uf in uf_list],id='dp-uf'),
         html.Label('Produtos: '),
         dcc.Dropdown([{'label': product, 'value':product} for product in products_list], id='dp-product'),
-        dcc.Dropdown([{'label': option, 'value':option} for option in option_list], id='dp-option'),
+        html.Label('Filtros: '),
+        dcc.Checklist( [{'label':option, 'value':option} for option in option_list],id='check-option'),
         
         #html.Button(id='submit-button-state', children='Submit'),
         
@@ -59,27 +59,41 @@ app.layout = html.Div(id='div1',
 ])
 
 @app.callback(
-    Output('store', 'data'),
+    Output('graph-uf', 'figure'),
     Input('dp-uf', 'value'),
     Input('sd-year', 'value'),
-    Input('dp-product', 'value')
+    Input('dp-product', 'value'),
+    Input('check-option', 'value'),
 ) 
-def df_generate_uf_year_product(uf,year,product): 
+def df_generate_uf_year_product(uf,year,product,option): 
     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
-    if uf == 'Todos' or '':
+    
+    
+    df_=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    final_df=df_.groupby('ESTADO', as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+    final_df['ESTADO(COLOR)']=final_df['ESTADO']
+    final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].max())]
+    fig=px.bar(final_df, x=final_df.columns[0],y=final_df.columns[1],color=final_df.columns[2])
+    
+    if not option:
+        
+        return fig
+    
+    if 'Brasil' in option:
+        # product ='GASOLINA COMUM'
+        # year=2008
         
         df_=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
         
-        #FORMATO PADRÃO (X[0],Y[1], COLOR[3])
         final_df=df_.groupby('ESTADO', as_index=False)['PREÇO MÉDIO REVENDA'].mean()
         final_df['ESTADO(COLOR)']=final_df['ESTADO']
         final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].max())]
         
-        #fig=graph_generate(final_df,final_df.columns[0])
+        fig=px.bar(final_df, x=final_df.columns[0],y=final_df.columns[1],color=final_df.columns[2])
         
-        return final_df.to_dict()
+        return fig
     
-    else:
+    elif 'Estados' in option:
         month_name = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
              7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'}
         
@@ -88,28 +102,34 @@ def df_generate_uf_year_product(uf,year,product):
         df_['MÊS NOME'] =  df_['MÊS'].map(month_name)
         
         final_df = df_[['MÊS','PREÇO MÉDIO REVENDA','MÊS NOME']]
+        
+        fig=px.bar(final_df, x=final_df.columns[0],y=final_df.columns[1],color=final_df.columns[2])
 
-        return final_df.to_dict()
+        return fig
+    
+    
+        
+        
+    
     
  
-@app.callback(
-    Output('graph-uf','figure'),
-    Input('store','data'),
+# @app.callback(
+#     Output('graph-uf','figure'),
+#     Input('store','data'),
 
-)    
-def option_graph(df):
+# )    
+# def option_graph(df):
     
-    #FORMATO PADRÃO (X[0],Y[1], COLOR[3])
-    df_ = pd.DataFrame(df)
+#     #FORMATO PADRÃO (X[0],Y[1], COLOR[3])
+#     df_ = pd.DataFrame(df)
     
-    fig = px.bar(df_, x=df_.columns[0],y=df_.columns[1],color=df_.columns[2])
+#     fig = 
         
-    return fig
+#     return fig
 
-    
 
-    
-    
-       
+
+
+
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8060)
+    app.run_server(debug=True,port=8064)
