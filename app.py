@@ -4,6 +4,8 @@ import pandas as pd
 import plotly.express as px
 import unicodedata
 import plotly.graph_objects as go
+import pdb
+import numpy as np
 
 
 df1=pd.read_excel('2001.xlsx')
@@ -68,6 +70,9 @@ app.layout = html.Div(id='div1',
 ) 
 def df_generate_uf_year_product(uf,year,product,option,filter): 
     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
+    #filter = ['MAX','MIN']
+    
+
     
     #BRASIL
     df_br=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
@@ -79,6 +84,10 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
     #ESTADO
     month_name = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
              7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'}
+    
+    # product ='GASOLINA COMUM'
+    # year=2008
+    # uf='SERGIPE'
         
     df_uf=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year) & (df_filtered['ESTADO']==uf)]
     df_uf['MÊS']=df_uf['MÊS'].dt.month
@@ -88,21 +97,44 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
     
     fig_uf=px.bar(final_df_uf, x=final_df_uf.columns[0],y=final_df_uf.columns[1],color=final_df_uf.columns[2])
     
-    
+    #pdb.set_trace()
     if not option:
         
         if not filter:
             return fig_uf
-        
-        if 'MAX' in filter:
-            df_max=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].max())]
+
+        elif len(filter) ==1:    
+            if 'MAX' in filter:
+                df_max=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].max())]
+                
+                color =  {'MÊS NOME': '#EF553B'}
+                
+                return px.bar(df_max, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME', color_discrete_map=color)
             
-            return px.bar(df_max, x='MÊS',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
-        
-        elif 'MIN' in filter:
+            elif 'MIN' in filter:
+                df_min=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].min())]
+                
+                return px.bar(df_min, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
+    
+        elif len(filter) > 1:
+            
+            df_max=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].max())]
             df_min=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].min())]
             
-            return px.bar(df_min, x='MÊS',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
+            
+            
+            final_df_min_max_uf= pd.concat([df_max,df_min])
+            
+            max = final_df_min_max_uf['PREÇO MÉDIO REVENDA'].max()  
+            final_df_min_max_uf['FILTRO']=np.where(final_df_min_max_uf['PREÇO MÉDIO REVENDA'] ==max,'MAX','MIN')
+            
+            color =  {'MAX': '#EF553B', 'MIN': '#636EFA'}
+            fig_max_min= px.bar(final_df_min_max_uf, x='MÊS NOME',y='PREÇO MÉDIO REVENDA',  color='FILTRO', color_discrete_map=color)
+            
+            return fig_max_min
+        
+        else:
+            return fig_uf
         
     
     if 'Brasil' in option:
@@ -113,34 +145,76 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
         if not filter:
             return fig_br
         
-        if 'MAX' in filter:
-            df_max=final_df_br[(final_df_br['PREÇO MÉDIO REVENDA']==final_df_br['PREÇO MÉDIO REVENDA'].max())]
+        elif len(filter)==1:
+            if 'MAX' in filter:
+                df_max=final_df_br[(final_df_br['PREÇO MÉDIO REVENDA']==final_df_br['PREÇO MÉDIO REVENDA'].max())]
+                
+                color =  {'MÊS NOME': '#EF553B'}
+                
+                return px.bar(df_max, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO' , color_discrete_map=color)
             
-            return px.bar(df_max, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO')
-        
-        elif 'MIN' in filter:
+            elif 'MIN' in filter:
+                df_min=final_df_br[(final_df_br['PREÇO MÉDIO REVENDA']==final_df_br['PREÇO MÉDIO REVENDA'].min())]
+                
+                return px.bar(df_min, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO')
+            
+        elif len(filter) == 2:
+            df_max=final_df_br[(final_df_br['PREÇO MÉDIO REVENDA']==final_df_br['PREÇO MÉDIO REVENDA'].max())]
             df_min=final_df_br[(final_df_br['PREÇO MÉDIO REVENDA']==final_df_br['PREÇO MÉDIO REVENDA'].min())]
             
-            return px.bar(df_min, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO')
+            final_df_min_max_br= pd.concat([df_max,df_min])
             
-    
+            max = final_df_min_max_br['PREÇO MÉDIO REVENDA'].max()  
+            final_df_min_max_br['FILTRO']=np.where(final_df_min_max_br['PREÇO MÉDIO REVENDA'] ==max,'MAX','MIN')
+            
+            color =  {'MAX': '#EF553B', 'MIN': '#636EFA'}
+            fig_max_min= px.bar(final_df_min_max_br, x='ESTADO',y='PREÇO MÉDIO REVENDA',  color='FILTRO', color_discrete_map=color)
+            
+            return fig_max_min
+        
+        else:
+            return fig_br
+        
     elif 'Estados' in option:
         
         if not filter:
             return fig_uf
-        
-        if 'MAX' in filter:
-            df_max=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].max())]
+
+        elif len(filter) ==1:    
+            if 'MAX' in filter:
+                df_max=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].max())]
+                
+                color =  {'MÊS NOME': '#EF553B'}
+                
+                return px.bar(df_max, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME',color_discrete_map=color)
             
-            return px.bar(df_max, x='MÊS',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
-        
-        elif 'MIN' in filter:
+            elif 'MIN' in filter:
+                df_min=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].min())]
+                
+                return px.bar(df_min, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
+    
+        elif len(filter) > 1:
+            
+            df_max=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].max())]
             df_min=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].min())]
             
-            return px.bar(df_min, x='MÊS',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
+            final_df_min_max_uf= pd.concat([df_max,df_min])
+            
+            max = final_df_min_max_uf['PREÇO MÉDIO REVENDA'].max()  
+            final_df_min_max_uf['FILTRO']=np.where(final_df_min_max_uf['PREÇO MÉDIO REVENDA'] ==max,'MAX','MIN')
+            
+            color =  {'MAX': '#EF553B', 'MIN': '#636EFA'}
+            
+            fig_max_min= px.bar(final_df_min_max_uf, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='FILTRO', color_discrete_map=color)
+            
+            return fig_max_min
+        
+        else:
+            return fig_uf
+        
         
         
 
         
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8065)
+    app.run_server(debug=True,port=8069)
