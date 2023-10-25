@@ -5,9 +5,6 @@ import plotly.express as px
 import unicodedata
 import plotly.graph_objects as go
 
-#TRANSFORMAR O RETORNO DA FUNÇÃO df_generate_uf_year_product em um dicionario e depois converter para dataframe
-#ADICIONAR novamente o filtro MAX E MIN
-
 
 df1=pd.read_excel('2001.xlsx')
 df2=pd.read_excel('2013.xlsx')
@@ -29,6 +26,8 @@ year_list.max()
 
 option_list = ['Brasil','Estados']
 
+filter_list = ['MAX','MIN']
+
 app = dash.Dash(__name__)
 
 app.layout = html.Div(id='div1',
@@ -42,6 +41,7 @@ app.layout = html.Div(id='div1',
         dcc.Dropdown([{'label': product, 'value':product} for product in products_list], id='dp-product'),
         html.Label('Filtros: '),
         dcc.Checklist( [{'label':option, 'value':option} for option in option_list],id='check-option'),
+        dcc.Checklist( [{'label':option, 'value':option} for option in filter_list],id='check-filter'),
         
         #html.Button(id='submit-button-state', children='Submit'),
         
@@ -64,72 +64,83 @@ app.layout = html.Div(id='div1',
     Input('sd-year', 'value'),
     Input('dp-product', 'value'),
     Input('check-option', 'value'),
+    Input('check-filter', 'value'),
 ) 
-def df_generate_uf_year_product(uf,year,product,option): 
+def df_generate_uf_year_product(uf,year,product,option,filter): 
     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
     
+    #BRASIL
+    df_br=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    final_df_br=df_br.groupby('ESTADO', as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+    final_df_br['ESTADO(COLOR)']=final_df_br['ESTADO']
+    fig_br=px.bar(final_df_br, x=final_df_br.columns[0],y=final_df_br.columns[1],color=final_df_br.columns[2])
     
-    df_=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
-    final_df=df_.groupby('ESTADO', as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-    final_df['ESTADO(COLOR)']=final_df['ESTADO']
-    final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].max())]
-    fig=px.bar(final_df, x=final_df.columns[0],y=final_df.columns[1],color=final_df.columns[2])
+    
+    #ESTADO
+    month_name = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
+             7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'}
+        
+    df_uf=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year) & (df_filtered['ESTADO']==uf)]
+    df_uf['MÊS']=df_uf['MÊS'].dt.month
+    df_uf['MÊS NOME'] =  df_uf['MÊS'].map(month_name)
+    
+    final_df_uf = df_uf[['MÊS','PREÇO MÉDIO REVENDA','MÊS NOME']]
+    
+    fig_uf=px.bar(final_df_uf, x=final_df_uf.columns[0],y=final_df_uf.columns[1],color=final_df_uf.columns[2])
+    
     
     if not option:
         
-        return fig
+        if not filter:
+            return fig_uf
+        
+        if 'MAX' in filter:
+            df_max=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].max())]
+            
+            return px.bar(df_max, x='MÊS',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
+        
+        elif 'MIN' in filter:
+            df_min=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].min())]
+            
+            return px.bar(df_min, x='MÊS',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
+        
     
     if 'Brasil' in option:
         # product ='GASOLINA COMUM'
         # year=2008
         
-        df_=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
         
-        final_df=df_.groupby('ESTADO', as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-        final_df['ESTADO(COLOR)']=final_df['ESTADO']
-        final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].max())]
+        if not filter:
+            return fig_br
         
-        fig=px.bar(final_df, x=final_df.columns[0],y=final_df.columns[1],color=final_df.columns[2])
+        if 'MAX' in filter:
+            df_max=final_df_br[(final_df_br['PREÇO MÉDIO REVENDA']==final_df_br['PREÇO MÉDIO REVENDA'].max())]
+            
+            return px.bar(df_max, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO')
         
-        return fig
+        elif 'MIN' in filter:
+            df_min=final_df_br[(final_df_br['PREÇO MÉDIO REVENDA']==final_df_br['PREÇO MÉDIO REVENDA'].min())]
+            
+            return px.bar(df_min, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO')
+            
     
     elif 'Estados' in option:
-        month_name = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
-             7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'}
         
-        df_=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year) & (df_filtered['ESTADO']==uf)]
-        df_['MÊS']=df_['MÊS'].dt.month
-        df_['MÊS NOME'] =  df_['MÊS'].map(month_name)
+        if not filter:
+            return fig_uf
         
-        final_df = df_[['MÊS','PREÇO MÉDIO REVENDA','MÊS NOME']]
+        if 'MAX' in filter:
+            df_max=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].max())]
+            
+            return px.bar(df_max, x='MÊS',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
         
-        fig=px.bar(final_df, x=final_df.columns[0],y=final_df.columns[1],color=final_df.columns[2])
-
-        return fig
-    
-    
+        elif 'MIN' in filter:
+            df_min=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].min())]
+            
+            return px.bar(df_min, x='MÊS',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
         
         
-    
-    
- 
-# @app.callback(
-#     Output('graph-uf','figure'),
-#     Input('store','data'),
 
-# )    
-# def option_graph(df):
-    
-#     #FORMATO PADRÃO (X[0],Y[1], COLOR[3])
-#     df_ = pd.DataFrame(df)
-    
-#     fig = 
         
-#     return fig
-
-
-
-
-
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8064)
+    app.run_server(debug=True,port=8065)
