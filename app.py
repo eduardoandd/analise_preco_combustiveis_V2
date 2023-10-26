@@ -56,7 +56,9 @@ app.layout = html.Div(id='div1',
             marks={i: 'Label {}'.format(i) if i == 1 else str(i) for i in range(2001,2024)},
             value=2001,
             id='sd-year'
-        )
+        ),
+        
+        dcc.Graph(id='graph-region')
 
 ])
 
@@ -71,9 +73,7 @@ app.layout = html.Div(id='div1',
 def df_generate_uf_year_product(uf,year,product,option,filter): 
     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
     #filter = ['MAX','MIN']
-    
 
-    
     #BRASIL
     df_br=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
     final_df_br=df_br.groupby('ESTADO', as_index=False)['PREÇO MÉDIO REVENDA'].mean()
@@ -101,6 +101,12 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
     if not option:
         
         if not filter:
+            
+            # fig_uf.update_layout(
+            #     xaxis_title='Estados',
+            #     yaxis_title='Preços'
+            # )
+            
             return fig_uf
 
         elif len(filter) ==1:    
@@ -136,11 +142,9 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
         else:
             return fig_uf
         
-    
     if 'Brasil' in option:
         # product ='GASOLINA COMUM'
         # year=2008
-        
         
         if not filter:
             return fig_br
@@ -213,8 +217,41 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
             return fig_uf
         
         
+@app.callback(
+    Output('graph-region','figure'),
+    Input('check-option', 'value'),
+    Input('dp-product', 'value'),
+    Input('sd-year', 'value'),
+)
+def graph_region(option,product,year):
+    
+ 
+    if 'Brasil' in option:
+        df_filtered = df[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','MÊS','ESTADO']]
+            
+        df_= df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+        
+        final_df=df_.groupby('REGIÃO',as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+         
+        
+        fig = px.bar(final_df, x='PREÇO MÉDIO REVENDA', y='REGIÃO', color='REGIÃO', orientation='h', barmode='group')
+        
+        return fig
+    
+    if not option:
+        empty_figure = go.Figure()
+        return empty_figure
+    else:
+        empty_figure = go.Figure()
+        return empty_figure
+        
+        
+    
+        
+        
+        
         
 
         
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8069)
+    app.run_server(debug=True,port=8072)
