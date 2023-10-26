@@ -6,6 +6,8 @@ import unicodedata
 import plotly.graph_objects as go
 import pdb
 import numpy as np
+import dash_bootstrap_components as dbc
+import plotly.io as pio
 
 
 df1=pd.read_excel('2001.xlsx')
@@ -30,7 +32,12 @@ option_list = ['Brasil','Estados']
 
 filter_list = ['MAX','MIN']
 
-app = dash.Dash(__name__)
+
+pio.templates.default = "plotly_dark"
+
+app = dash.Dash(
+    external_stylesheets=[dbc.themes.SLATE]
+)
 
 app.layout = html.Div(id='div1',
     children=[
@@ -58,7 +65,7 @@ app.layout = html.Div(id='div1',
             id='sd-year'
         ),
         
-        dcc.Graph(id='graph-region')
+        dcc.Graph(id='graph-region',config={'displayModeBar': False})
 
 ])
 
@@ -78,7 +85,7 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
     df_br=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
     final_df_br=df_br.groupby('ESTADO', as_index=False)['PREÇO MÉDIO REVENDA'].mean()
     final_df_br['ESTADO(COLOR)']=final_df_br['ESTADO']
-    fig_br=px.bar(final_df_br, x=final_df_br.columns[0],y=final_df_br.columns[1],color=final_df_br.columns[2])
+    fig_br=px.bar(final_df_br, x=final_df_br.columns[0],y=final_df_br.columns[1],color=final_df_br.columns[2], template='plotly_dark')
     
     
     #ESTADO
@@ -95,7 +102,7 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
     
     final_df_uf = df_uf[['MÊS','PREÇO MÉDIO REVENDA','MÊS NOME']]
     
-    fig_uf=px.bar(final_df_uf, x=final_df_uf.columns[0],y=final_df_uf.columns[1],color=final_df_uf.columns[2])
+    fig_uf=px.bar(final_df_uf, x=final_df_uf.columns[0],y=final_df_uf.columns[1],color=final_df_uf.columns[2], template='plotly_dark')
     
     #pdb.set_trace()
     if not option:
@@ -115,12 +122,12 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
                 
                 color =  {'MÊS NOME': '#EF553B'}
                 
-                return px.bar(df_max, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME', color_discrete_map=color)
+                return px.bar(df_max, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME', color_discrete_map=color, template='plotly_dark')
             
             elif 'MIN' in filter:
                 df_min=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].min())]
                 
-                return px.bar(df_min, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
+                return px.bar(df_min, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME', template='plotly_dark')
     
         elif len(filter) > 1:
             
@@ -135,7 +142,7 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
             final_df_min_max_uf['FILTRO']=np.where(final_df_min_max_uf['PREÇO MÉDIO REVENDA'] ==max,'MAX','MIN')
             
             color =  {'MAX': '#EF553B', 'MIN': '#636EFA'}
-            fig_max_min= px.bar(final_df_min_max_uf, x='MÊS NOME',y='PREÇO MÉDIO REVENDA',  color='FILTRO', color_discrete_map=color)
+            fig_max_min= px.bar(final_df_min_max_uf, x='MÊS NOME',y='PREÇO MÉDIO REVENDA',  color='FILTRO', color_discrete_map=color, template='plotly_dark')
             
             return fig_max_min
         
@@ -155,12 +162,12 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
                 
                 color =  {'MÊS NOME': '#EF553B'}
                 
-                return px.bar(df_max, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO' , color_discrete_map=color)
+                return px.bar(df_max, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO' , color_discrete_map=color, template='plotly_dark')
             
             elif 'MIN' in filter:
                 df_min=final_df_br[(final_df_br['PREÇO MÉDIO REVENDA']==final_df_br['PREÇO MÉDIO REVENDA'].min())]
                 
-                return px.bar(df_min, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO')
+                return px.bar(df_min, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO', template='plotly_dark')
             
         elif len(filter) == 2:
             df_max=final_df_br[(final_df_br['PREÇO MÉDIO REVENDA']==final_df_br['PREÇO MÉDIO REVENDA'].max())]
@@ -172,7 +179,7 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
             final_df_min_max_br['FILTRO']=np.where(final_df_min_max_br['PREÇO MÉDIO REVENDA'] ==max,'MAX','MIN')
             
             color =  {'MAX': '#EF553B', 'MIN': '#636EFA'}
-            fig_max_min= px.bar(final_df_min_max_br, x='ESTADO',y='PREÇO MÉDIO REVENDA',  color='FILTRO', color_discrete_map=color)
+            fig_max_min= px.bar(final_df_min_max_br, x='ESTADO',y='PREÇO MÉDIO REVENDA',  color='FILTRO', color_discrete_map=color,template='plotly_dark')
             
             return fig_max_min
         
@@ -190,12 +197,12 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
                 
                 color =  {'MÊS NOME': '#EF553B'}
                 
-                return px.bar(df_max, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME',color_discrete_map=color)
+                return px.bar(df_max, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME',color_discrete_map=color, template='plotly_dark')
             
             elif 'MIN' in filter:
                 df_min=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].min())]
                 
-                return px.bar(df_min, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
+                return px.bar(df_min, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME', template='plotly_dark')
     
         elif len(filter) > 1:
             
@@ -209,7 +216,7 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
             
             color =  {'MAX': '#EF553B', 'MIN': '#636EFA'}
             
-            fig_max_min= px.bar(final_df_min_max_uf, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='FILTRO', color_discrete_map=color)
+            fig_max_min= px.bar(final_df_min_max_uf, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='FILTRO', color_discrete_map=color, template='plotly_dark')
             
             return fig_max_min
         
@@ -224,34 +231,41 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
     Input('sd-year', 'value'),
 )
 def graph_region(option,product,year):
+    df_filtered = df[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','MÊS','ESTADO']]
+                
+    df_= df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+            
+    final_df=df_.groupby('REGIÃO',as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+        
+    fig = px.bar(final_df, x='PREÇO MÉDIO REVENDA', y='REGIÃO', color='REGIÃO', orientation='h', barmode='group', template='plotly_dark')
+    
+    if 'Brasil' in option:
+        
+        return  fig
+    
+    elif not option:
+        empty_figure = go.Figure()
+        empty_figure.update_layout(template='plotly_dark')
+        
+        return empty_figure
     
  
-    if 'Brasil' in option:
-        df_filtered = df[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','MÊS','ESTADO']]
-            
-        df_= df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    # if  not option:
+    #     empty_figure = go.Figure()
+    #     empty_figure.update_layout(template='plotly_dark')
         
-        final_df=df_.groupby('REGIÃO',as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+    #     return fig
+    
+    # elif 'Brasil' in option :
+       
          
         
-        fig = px.bar(final_df, x='PREÇO MÉDIO REVENDA', y='REGIÃO', color='REGIÃO', orientation='h', barmode='group')
         
-        return fig
+    #     return fig
+    # else:
+       
+    #     return empty_figure
     
-    if not option:
-        empty_figure = go.Figure()
-        return empty_figure
-    else:
-        empty_figure = go.Figure()
-        return empty_figure
-        
-        
-    
-        
-        
-        
-        
-
-        
+           
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8072)
+    app.run_server(debug=True,port=8090)
