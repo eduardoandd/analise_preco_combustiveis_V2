@@ -9,11 +9,11 @@ import numpy as np
 import dash_bootstrap_components as dbc
 import plotly.io as pio
 
-
+#INGESÃO DE DADOS
 df1=pd.read_excel('2001.xlsx')
-df2=pd.read_excel('2013.xlsx')
-        
+df2=pd.read_excel('2013.xlsx')  
 df1.columns = df2.columns
+
 #REMOVENDOS OS ACENTOS DAS COLUNAS
 for i in range(len(df1)):
     linha= df1.iloc[i,1]
@@ -33,39 +33,75 @@ option_list = ['Brasil','Estados']
 filter_list = ['MAX','MIN']
 
 
-pio.templates.default = "plotly_dark"
+
+#========= Layout =============
 
 app = dash.Dash(
-    external_stylesheets=[dbc.themes.SLATE]
+    external_stylesheets=[dbc.themes.MINTY]
 )
 
 app.layout = html.Div(id='div1',
     children=[
-        dcc.Store(id='store'),
-        html.H1('Análise de preço dos combustiveis'),
         
-        html.Label('Estados:'),
-        dcc.Dropdown([{'label': uf, 'value':uf} for uf in uf_list],id='dp-uf'),
-        html.Label('Produtos: '),
-        dcc.Dropdown([{'label': product, 'value':product} for product in products_list], id='dp-product'),
-        html.Label('Filtros: '),
-        dcc.Checklist( [{'label':option, 'value':option} for option in option_list],id='check-option'),
-        dcc.Checklist( [{'label':option, 'value':option} for option in filter_list],id='check-filter'),
+        dbc.Row([
+            
+            #MENU LATERAL
+            dbc.Col([
+                html.H1('Análise de preço dos combustiveis'),
+                html.Hr(),
+                
+                html.Label('Estados:'),
+                dcc.Dropdown([{'label': uf, 'value':uf} for uf in uf_list],id='dp-uf'),
+                
+                html.Label('Produtos: '),
+                dcc.Dropdown([{'label': product, 'value':product} for product in products_list], id='dp-product'),
+                
+                html.Label('Filtros: '),
+                dcc.Checklist( [{'label':option, 'value':option} for option in option_list],id='check-option', inputStyle={'margin-right':'5px'}),
+                dcc.Checklist( [{'label':option, 'value':option} for option in filter_list],id='check-filter', inputStyle={'margin-right':'5px'}),
+                
+                html.Label('Ano'),
+                dcc.Slider(
+                    min=2001,
+                    max=2023,
+                    marks={i: 'Label {}'.format(i) if i == 1 else str(i) for i in range(2001,2024)},
+                    value=2001,
+                    id='sd-year'
+                ),
+
+            ],sm=2, style= {'padding':'25px 33px 0px'}),
+            
+            dbc.Col([
+                dbc.Row([
+                    dbc.Col([dcc.Graph(id='graph-comparative'),],sm=4),
+                    dbc.Col([dcc.Graph(id='graph-region'),],sm=4),
+                    dbc.Col([dcc.Graph(id='graph-max-min'),],sm=4),
+                ]),
+                dbc.Row([
+                    dcc.Graph(id='graph-uf'),
+                    
+                ])
+                
+            ],sm=10)
+            
+        ]),
+        
+        
+        dcc.Store(id='store'),
+        
+        
+        
+        
+        
+       
         
         #html.Button(id='submit-button-state', children='Submit'),
         
-        dcc.Graph(id='graph-uf'),
         
-        html.Label('Ano'),
-        dcc.Slider(
-            min=2001,
-            max=2023,
-            marks={i: 'Label {}'.format(i) if i == 1 else str(i) for i in range(2001,2024)},
-            value=2001,
-            id='sd-year'
-        ),
         
-        dcc.Graph(id='graph-region',config={'displayModeBar': False})
+        
+        
+        
 
 ])
 
@@ -85,7 +121,7 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
     df_br=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
     final_df_br=df_br.groupby('ESTADO', as_index=False)['PREÇO MÉDIO REVENDA'].mean()
     final_df_br['ESTADO(COLOR)']=final_df_br['ESTADO']
-    fig_br=px.bar(final_df_br, x=final_df_br.columns[0],y=final_df_br.columns[1],color=final_df_br.columns[2], template='plotly_dark')
+    fig_br=px.bar(final_df_br, x=final_df_br.columns[0],y=final_df_br.columns[1],color=final_df_br.columns[2])
     
     
     #ESTADO
@@ -102,7 +138,7 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
     
     final_df_uf = df_uf[['MÊS','PREÇO MÉDIO REVENDA','MÊS NOME']]
     
-    fig_uf=px.bar(final_df_uf, x=final_df_uf.columns[0],y=final_df_uf.columns[1],color=final_df_uf.columns[2], template='plotly_dark')
+    fig_uf=px.bar(final_df_uf, x=final_df_uf.columns[0],y=final_df_uf.columns[1],color=final_df_uf.columns[2])
     
     #pdb.set_trace()
     if not option:
@@ -122,12 +158,12 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
                 
                 color =  {'MÊS NOME': '#EF553B'}
                 
-                return px.bar(df_max, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME', color_discrete_map=color, template='plotly_dark')
+                return px.bar(df_max, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME', color_discrete_map=color)
             
             elif 'MIN' in filter:
                 df_min=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].min())]
                 
-                return px.bar(df_min, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME', template='plotly_dark')
+                return px.bar(df_min, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
     
         elif len(filter) > 1:
             
@@ -142,7 +178,7 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
             final_df_min_max_uf['FILTRO']=np.where(final_df_min_max_uf['PREÇO MÉDIO REVENDA'] ==max,'MAX','MIN')
             
             color =  {'MAX': '#EF553B', 'MIN': '#636EFA'}
-            fig_max_min= px.bar(final_df_min_max_uf, x='MÊS NOME',y='PREÇO MÉDIO REVENDA',  color='FILTRO', color_discrete_map=color, template='plotly_dark')
+            fig_max_min= px.bar(final_df_min_max_uf, x='MÊS NOME',y='PREÇO MÉDIO REVENDA',  color='FILTRO', color_discrete_map=color)
             
             return fig_max_min
         
@@ -162,12 +198,12 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
                 
                 color =  {'MÊS NOME': '#EF553B'}
                 
-                return px.bar(df_max, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO' , color_discrete_map=color, template='plotly_dark')
+                return px.bar(df_max, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO' , color_discrete_map=color)
             
             elif 'MIN' in filter:
                 df_min=final_df_br[(final_df_br['PREÇO MÉDIO REVENDA']==final_df_br['PREÇO MÉDIO REVENDA'].min())]
                 
-                return px.bar(df_min, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO', template='plotly_dark')
+                return px.bar(df_min, x='ESTADO',y='PREÇO MÉDIO REVENDA', color='ESTADO')
             
         elif len(filter) == 2:
             df_max=final_df_br[(final_df_br['PREÇO MÉDIO REVENDA']==final_df_br['PREÇO MÉDIO REVENDA'].max())]
@@ -197,12 +233,12 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
                 
                 color =  {'MÊS NOME': '#EF553B'}
                 
-                return px.bar(df_max, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME',color_discrete_map=color, template='plotly_dark')
+                return px.bar(df_max, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME',color_discrete_map=color)
             
             elif 'MIN' in filter:
                 df_min=final_df_uf[(final_df_uf['PREÇO MÉDIO REVENDA']==final_df_uf['PREÇO MÉDIO REVENDA'].min())]
                 
-                return px.bar(df_min, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME', template='plotly_dark')
+                return px.bar(df_min, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='MÊS NOME')
     
         elif len(filter) > 1:
             
@@ -216,7 +252,7 @@ def df_generate_uf_year_product(uf,year,product,option,filter):
             
             color =  {'MAX': '#EF553B', 'MIN': '#636EFA'}
             
-            fig_max_min= px.bar(final_df_min_max_uf, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='FILTRO', color_discrete_map=color, template='plotly_dark')
+            fig_max_min= px.bar(final_df_min_max_uf, x='MÊS NOME',y='PREÇO MÉDIO REVENDA', color='FILTRO', color_discrete_map=color)
             
             return fig_max_min
         
@@ -237,35 +273,82 @@ def graph_region(option,product,year):
             
     final_df=df_.groupby('REGIÃO',as_index=False)['PREÇO MÉDIO REVENDA'].mean()
         
-    fig = px.bar(final_df, x='PREÇO MÉDIO REVENDA', y='REGIÃO', color='REGIÃO', orientation='h', barmode='group', template='plotly_dark')
+    fig = px.bar(final_df, x='PREÇO MÉDIO REVENDA', y='REGIÃO', color='REGIÃO', orientation='h', barmode='group')
     
-    if 'Brasil' in option:
-        
-        return  fig
+    fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
     
-    elif not option:
-        empty_figure = go.Figure()
-        empty_figure.update_layout(template='plotly_dark')
-        
-        return empty_figure
+    return fig
+
+@app.callback(
+    Output('graph-comparative','figure'),
+    Input('dp-product', 'value'),
+    Input('dp-uf', 'value'),
+    Input('sd-year', 'value'),
+)
+def graph_uf_x_br(product,uf,year):
     
- 
-    # if  not option:
-    #     empty_figure = go.Figure()
-    #     empty_figure.update_layout(template='plotly_dark')
-        
-    #     return fig
+    # product = 'GASOLINA COMUM'
+    # uf='AMAZONAS'
+    # year=2008
     
-    # elif 'Brasil' in option :
-       
-         
-        
-        
-    #     return fig
-    # else:
-       
-    #     return empty_figure
+    df_filtered = df[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','MÊS','ESTADO']]
+    
+    df_uf=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['ESTADO']==uf) & (df_filtered['MÊS'].dt.year==year)].groupby(['ESTADO','PRODUTO','MÊS'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+    
+    df_br = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)].groupby(['PRODUTO','MÊS'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+    
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df_br['MÊS'].dt.month,y=df_br['PREÇO MÉDIO REVENDA'], mode='lines+markers', name='Brasil'))
+    fig.add_trace(go.Scatter(x=df_uf['MÊS'].dt.month,y=df_uf['PREÇO MÉDIO REVENDA'], mode='lines', name=uf))
+    
+    fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
+
+    return fig
+
+@app.callback(
+    Output('graph-max-min','figure'),
+    Input('dp-product', 'value'),
+    Input('dp-uf', 'value'),
+    Input('sd-year', 'value'),
+)
+def graph_max_min(product,uf,year):
+    
+    df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
+    
+    # product = 'GASOLINA COMUM'
+    # uf='AMAZONAS'
+    # year=2008
+    
+    final_df=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['ESTADO']==uf) & (df_filtered['MÊS'].dt.year==year)].groupby(['PRODUTO','ESTADO','MÊS'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+    
+    df_max=final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].max())]
+    df_min=final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].min())]
+    
+    fig = go.Figure(
+        data = [
+            go.Bar(x=df_max['MÊS'], y=df_max['PREÇO MÉDIO REVENDA'], name='Max'),
+            go.Bar(x=df_min['MÊS'], y=df_min['PREÇO MÉDIO REVENDA'], name='Min'),
+        ]
+    )
+    
+    fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
+    
+    return fig
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
     
            
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8090)
+    app.run_server(debug=True,port=8092)
