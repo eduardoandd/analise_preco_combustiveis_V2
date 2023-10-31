@@ -60,14 +60,17 @@ app.layout = html.Div(id='div1',
                 dcc.Checklist( [{'label':option, 'value':option} for option in option_list],id='check-option', inputStyle={'margin-right':'5px'}),
                 dcc.Checklist( [{'label':option, 'value':option} for option in filter_list],id='check-filter', inputStyle={'margin-right':'5px'}),
                 
-                html.Label('Ano'),
+                html.Label('Ano', style={'margin-top':'8px'}),
                 dcc.Slider(
                     min=2001,
                     max=2023,
-                    marks={i: 'Label {}'.format(i) if i == 1 else str(i) for i in range(2001,2024)},
+                    marks=None,
                     value=2001,
-                    id='sd-year'
+                    step=1,
+                    id='sd-year',
+                    tooltip={"placement": "bottom", "always_visible": True}    
                 ),
+                
 
             ],sm=2, style= {'padding':'25px 33px 0px'}),
             
@@ -321,13 +324,19 @@ def graph_max_min(product,uf,year):
     
     final_df=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['ESTADO']==uf) & (df_filtered['MÊS'].dt.year==year)].groupby(['PRODUTO','ESTADO','MÊS'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
     
+    month_name = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'}
+    
+    final_df['MÊS_'] =final_df['MÊS'].dt.month
+    final_df['MÊS NOME'] = final_df['MÊS_'].map(month_name)
+    
+    
     df_max=final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].max())]
     df_min=final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].min())]
     
     fig = go.Figure(
         data = [
-            go.Bar(x=df_max['MÊS'], y=df_max['PREÇO MÉDIO REVENDA'], name='Max'),
-            go.Bar(x=df_min['MÊS'], y=df_min['PREÇO MÉDIO REVENDA'], name='Min'),
+            go.Bar(x=df_max['MÊS NOME'], y=df_max['PREÇO MÉDIO REVENDA'], name='Max'),
+            go.Bar(x=df_min['MÊS NOME'], y=df_min['PREÇO MÉDIO REVENDA'], name='Min'),
         ]
     )
     
@@ -351,4 +360,4 @@ def graph_max_min(product,uf,year):
     
            
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8092)
+    app.run_server(debug=True,port=8094)
