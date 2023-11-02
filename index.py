@@ -242,8 +242,8 @@ app.layout = html.Div(id='div1',
         
 @app.callback(
     Output('graph-uf', 'figure'),
-    Output('graph-region','figure'),
     Output('graph-comparative','figure'),
+    Output('graph-region','figure'),
     Output('graph-max-min','figure'),
     
     Input('dp-uf', 'value'),
@@ -262,13 +262,14 @@ def graph_select(uf,product,year,option):
     #BRASIL
     var_graph_br = graph_br(product,year)
     var_graph_max_min_br=graph_max_min_br(product,year)
+    var_graph_br_top3_cheap=graph_br_top3_cheap(product,year)
     
     if not option:
-        return var_graph_uf,var_graph_region,var_graph_uf_x_br,var_graph_max_min
+        return var_graph_uf,var_graph_uf_x_br,var_graph_region,var_graph_max_min
     
     elif 'Brasil' in option:
         
-        return var_graph_br,var_graph_region,var_graph_uf_x_br,var_graph_max_min_br
+        return var_graph_br,var_graph_br_top3_cheap,var_graph_region,var_graph_max_min_br
         
     
     else:
@@ -295,19 +296,6 @@ def graph_uf(uf,product,year):
     
     return px.bar(final_df, y='PREÇO MÉDIO REVENDA',x='MÊS NÚMERO',color='MÊS NOME')
     
-def graph_region(product,year):
-    df_filtered = df[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','MÊS','ESTADO']]
-                
-    df_= df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
-            
-    final_df=df_.groupby('REGIÃO',as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-        
-    fig = px.bar(final_df, x='PREÇO MÉDIO REVENDA', y='REGIÃO', color='REGIÃO', orientation='h', barmode='group')
-    
-    fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
-    
-    return fig
-
 def graph_uf_x_br(product,uf,year):
     
     # product = 'GASOLINA COMUM'
@@ -358,54 +346,10 @@ def graph_max_min(product,uf,year):
     
     return fig
 
-
-
-
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-# def graph_br_top3_cheap(product,year):
-    
-#     product = 'GASOLINA COMUM'
-#     uf='AMAZONAS'
-#     year=2008
-    
-#     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
-#     df_filtered['MÊS_MÊS'] =  df_filtered['MÊS'].dt.month
-
-#     df_ = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)].groupby(['ESTADO','MÊS'])['PREÇO MÉDIO REVENDA'].mean().to_frame()
-    
-#     df_.sort_values(by='PREÇO MÉDIO REVENDA', ascending=True)
-#     df_.index[0][0]
-    
-#     final_df=df_.sort_values(by='PREÇO MÉDIO REVENDA',ascending=True)
-    
-    
-    
-    
-     
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=top1['ANO'],y=top1['PREÇO MÉDIO REVENDA'], mode='lines', name='SÃO PAULO'))
-    fig.add_trace(go.Scatter(x=top2['ANO'],y=top2['PREÇO MÉDIO REVENDA'], mode='lines', name='SERGIE'))
-    fig.add_trace(go.Scatter(x=top3['ANO'],y=top3['PREÇO MÉDIO REVENDA'], mode='lines', name='RJ'))
-    
-    
-    
-    fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
-
-
+ 
 #BRASIL
 def graph_br(product,year):
-    
+      
     #VAR AUX
     # product ='GASOLINA COMUM'
     # year=2001
@@ -416,6 +360,57 @@ def graph_br(product,year):
     final_df = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)].groupby(['ESTADO'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
     
     return px.bar(final_df,y='PREÇO MÉDIO REVENDA',x='ESTADO', color='ESTADO')
+
+def graph_br_top3_cheap(product,year):
+    
+    # product = 'GASOLINA COMUM'
+    # year=2015
+    
+    df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
+    
+    df_=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    
+    top_3=df_.groupby('ESTADO')['PREÇO MÉDIO REVENDA'].mean().sort_values(ascending=True).head(3)
+    
+    ufs=top_3.index.to_list()
+    
+    list_dict = []
+    
+    for uf in ufs:      
+    
+        df_dict=df_filtered[(df_filtered['ESTADO']==uf) & (df_filtered['MÊS'].dt.year==year) & (df_filtered['PRODUTO']==product)].groupby(['ESTADO','MÊS'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+        df_dict['MONTH'] = df_dict['MÊS'].dt.month
+        
+        dict_df=df_dict.to_dict()
+        
+        list_dict.append(dict_df)
+        
+    uf_1=pd.DataFrame(list_dict[0])
+    uf_2=pd.DataFrame(list_dict[1])
+    uf_3=pd.DataFrame(list_dict[2])
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(x=uf_1['MONTH'],y=uf_1['PREÇO MÉDIO REVENDA'], mode='lines+markers', name=uf_1.iloc[1,0]))
+    fig.add_trace(go.Scatter(x=uf_2['MONTH'],y=uf_2['PREÇO MÉDIO REVENDA'], mode='lines', name=uf_2.iloc[1,0]))
+    fig.add_trace(go.Scatter(x=uf_3['MONTH'],y=uf_3['PREÇO MÉDIO REVENDA'], mode='markers', name=uf_3.iloc[1,0]))
+    
+    fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
+    
+    return fig
+
+def graph_region(product,year):
+    df_filtered = df[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','MÊS','ESTADO']]
+                
+    df_= df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+            
+    final_df=df_.groupby('REGIÃO',as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+        
+    fig = px.bar(final_df, x='PREÇO MÉDIO REVENDA', y='REGIÃO', color='REGIÃO', orientation='h', barmode='group')
+    
+    fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
+    
+    return fig
 
 def graph_max_min_br(product,year):
     
@@ -438,13 +433,7 @@ def graph_max_min_br(product,year):
     
     return fig
 
-    
-    
-    
-    
-
-
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8098)
+    app.run_server(debug=True,port=8099)
