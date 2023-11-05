@@ -8,19 +8,13 @@ import dash_bootstrap_components as dbc
 import plotly.io as pio
 
 
-# dash-bootstrap-components==1.5.0
-# dash-core-components==2.0.0
-# dash-html-components==2.0.0
-# dash-table==5.0.0
-
-
 
 #INGESÃO DE DADOS
 df1=pd.read_excel('2001.xlsx')
 df2=pd.read_excel('2013.xlsx')  
 df1.columns = df2.columns
 
-#REMOVENDOS OS ACENTOS DAS COLUNAS
+#REMOVENDOS OS ACENTOS DAS LINHAS
 for i in range(len(df1)):
     linha= df1.iloc[i,1]
     linha_sem_acentos = unicodedata.normalize('NFD', linha).encode('ascii', 'ignore').decode('utf-8')
@@ -32,6 +26,7 @@ df= pd.concat([df1,df2])
 df1_semanal=pd.read_excel('semanal-estados-2004-a-2012.xlsx',skiprows=12)
 df2_semanal=pd.read_excel('semanal-estados-desde-2013.xlsx',skiprows=17)
 
+#REMOVENDOS OS ACENTOS DAS LINHAS
 for i in range(len(df1)):
     linha= df1_semanal.iloc[i,4]
     linha_sem_acentos = unicodedata.normalize('NFD', linha).encode('ascii', 'ignore').decode('utf-8')
@@ -340,4 +335,4 @@ def graph_max_min_br(product,year):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8033)
+    app.run_server(debug=False,port=8033)
