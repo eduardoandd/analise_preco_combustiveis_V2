@@ -4,8 +4,6 @@ import pandas as pd
 import plotly.express as px
 import unicodedata
 import plotly.graph_objects as go
-import pdb
-import numpy as np
 import dash_bootstrap_components as dbc
 import plotly.io as pio
 
