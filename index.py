@@ -9,6 +9,14 @@ import numpy as np
 import dash_bootstrap_components as dbc
 import plotly.io as pio
 
+
+# dash-bootstrap-components==1.5.0
+# dash-core-components==2.0.0
+# dash-html-components==2.0.0
+# dash-table==5.0.0
+
+
+
 #INGESÃO DE DADOS
 df1=pd.read_excel('2001.xlsx')
 df2=pd.read_excel('2013.xlsx')  
@@ -54,7 +62,7 @@ app.layout = html.Div(id='div1',
             
             #MENU LATERAL
             dbc.Col([
-                html.H1('Análise de preço dos combustiveis'),
+                html.H2('Análise de preço dos combustiveis'),
                 html.Hr(),
                 
                 html.Label('Estados:'),
@@ -331,7 +339,6 @@ def graph_max_min_br(product,year):
     fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
     
     return fig
-
 
 
 if __name__ == '__main__':
