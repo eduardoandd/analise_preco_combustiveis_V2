@@ -34,16 +34,16 @@ df['MÊS NOME']= df['MÊS NÚMERO'].map(month_name)
 
 
 
-# df1_semanal=pd.read_excel('semanal-estados-2004-a-2012.xlsx',skiprows=12)
-# df2_semanal=pd.read_excel('semanal-estados-desde-2013.xlsx',skiprows=17)
+df1_semanal=pd.read_excel('semanal-estados-2004-a-2012.xlsx',skiprows=12)
+df2_semanal=pd.read_excel('semanal-estados-desde-2013.xlsx',skiprows=17)
 
-# #REMOVENDOS OS ACENTOS DAS LINHAS
-# for i in range(len(df1)):
-#     linha= df1_semanal.iloc[i,4]
-#     linha_sem_acentos = unicodedata.normalize('NFD', linha).encode('ascii', 'ignore').decode('utf-8')
-#     df1_semanal.iloc[i, 4] = linha_sem_acentos  
+#REMOVENDOS OS ACENTOS DAS LINHAS
+for i in range(len(df1)):
+    linha= df1_semanal.iloc[i,4]
+    linha_sem_acentos = unicodedata.normalize('NFD', linha).encode('ascii', 'ignore').decode('utf-8')
+    df1_semanal.iloc[i, 4] = linha_sem_acentos  
     
-# df_semanal= pd.concat([df1_semanal,df2_semanal])
+df_semanal= pd.concat([df1_semanal,df2_semanal])
 
 
 # #VAR AUX. 
@@ -62,6 +62,7 @@ main_config = {
     'hovermode': 'x unified',
     "margin": {"l":10,"r":10,"t":10,"b":10}
 }
+config_graph={"displayModeBar":False, "showTips":False}
 
 #========= Layout =============
 
@@ -157,22 +158,59 @@ app.layout = html.Div(id='div1',
         #ROW 2
         dbc.Row([
             dbc.Col([
-                dbc.Col([
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                dcc.Graph(id='graph_indicator_max', className='dbc', config=config_graph)
+                            ])
+                        ], style=tab_card)
+                    ],sm=6),
+                    
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                dcc.Graph(id='graph_indicator_min', className='dbc', config=config_graph)
+                            ])
+                        ], style=tab_card)
+                    ],sm=6)
+                ])
+            ],md=4),
+            
+            dbc.Col([
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                dcc.Graph(id='graph_dinamyc_week', className='dbc', config=config_graph)
+                            ])
+                        ], style=tab_card)
+                    ],sm=12)
+                ])
+            ],md=8)
+        ]),
+        
+        #ROW 3
+        dbc.Row([
+            dbc.Col([
+                dbc.Row([
                     dbc.Card([
                         dbc.CardBody([
-                            dcc.Graph(id='graph_indicator_max', className='dbc')
+                            dcc.Graph(id='graph_graph_max_x_min_x_br', className='dbc', config=config_graph)
                         ])
-                    ],style=tab_card)
-                ],md=4),
-                dbc.Col([
+                    ], style=tab_card)
+                ])
+            ],md=4),
+            
+            dbc.Col([
+                dbc.Row([
                     dbc.Card([
                         dbc.CardBody([
-                            dcc.Graph(id='graph_indicator_min', className='dbc')
+                            dcc.Graph(id='graph_top_chep', className='dbc', config=config_graph)
                         ])
-                    ],style=tab_card)
-                ],md=4),
-                
-            ],md=4)
+                    ], style=tab_card)
+                ])
+            ],md=4),
         ])
         
 ])
@@ -183,6 +221,9 @@ app.layout = html.Div(id='div1',
     Output('graph-uf', 'figure'),
     Output('graph_indicator_max', 'figure'),
     Output('graph_indicator_min', 'figure'),
+    Output('graph_graph_max_x_min_x_br', 'figure'),
+    Output('graph_dinamyc_week', 'figure'),
+    Output('graph_top_chep', 'figure'),
     # Output('graph-comparative','figure'),
     # Output('graph-region','figure'),
     # Output('graph-max-min','figure'),
@@ -199,6 +240,9 @@ def graph_select(uf,product,year,theme):
     var_graph_uf=graph_uf(uf,product,year,theme)
     var_graph_indicator_max=graph_indicator_max(uf,product,year,theme)
     var_graph_indicator_min=graph_indicator_min(uf,product,year,theme)
+    var_graph_max_x_min_x_br=graph_max_x_min_x_br(uf,product,year,theme)
+    var_graph_dinamyc_week=graph_dinamyc_week(uf,product,year,theme)
+    var_graph_top_chep=graph_top_chep(uf,product,year,theme)
     # var_dinamyc_week = graph_dinamyc_week(uf,product,year)
     # var_graph_uf_x_br=graph_uf_x_br(product,uf,year)
     # var_graph_max_min=graph_max_min(product,uf,year)
@@ -209,7 +253,7 @@ def graph_select(uf,product,year,theme):
     # var_graph_br_top3_cheap=graph_br_top3_cheap(product,year)
     # var_graph_region=graph_region(product,year)
     
-    return var_graph_uf,var_graph_indicator_max,var_graph_indicator_min
+    return var_graph_uf,var_graph_indicator_max,var_graph_indicator_min,var_graph_max_x_min_x_br,var_graph_dinamyc_week,var_graph_top_chep
     
     # if not option:
     #     if year >=2004:
@@ -271,11 +315,13 @@ def graph_indicator_max(uf,product,year,theme):
     df_max_anterior=df_ano_interior.groupby('MÊS NOME',as_index=False)['PREÇO MÉDIO REVENDA'].max().sort_values(by='PREÇO MÉDIO REVENDA', ascending=False).head(1)
     
     variacao_porcentual_max= ((df_max['PREÇO MÉDIO REVENDA'].max() - df_max_anterior['PREÇO MÉDIO REVENDA'].max()) /  df_max_anterior['PREÇO MÉDIO REVENDA'].max()) * 100
+    
+    title_text = f'<span style="font-size:90%; margin-top: 100px;"><b>{df_max["MÊS NOME"].iloc[0]}</b> - MÊS MAIS <span style="color: red;">CARO</span></span>'
         
     fig_indicator_max= go.Figure(
             go.Indicator(
                 mode='number+delta',
-                title={'text':f'<span style="font-size:90%">{df_max["MÊS NOME"].iloc[0]} - MÊS MAIS BARATO</span>'},
+                title={'text':title_text},
                 value=df_max['PREÇO MÉDIO REVENDA'].iloc[0],
                 number={'prefix':'R$'}
             )
@@ -298,6 +344,8 @@ def graph_indicator_max(uf,product,year,theme):
             y=0.20,
             font=dict(size=20, color='green')
         )
+        
+    fig_indicator_max.update_layout(main_config, height=200, template=template)
         
         
     return fig_indicator_max
@@ -322,10 +370,12 @@ def graph_indicator_min(uf,product,year,theme):
     
     variacao_porcentual_min= ((df_min['PREÇO MÉDIO REVENDA'].min() - df_min_anterior['PREÇO MÉDIO REVENDA'].min()) /  df_min_anterior['PREÇO MÉDIO REVENDA'].min()) * 100
     
+    title_text = f'<span style="font-size:90%;"><b>{df_min["MÊS NOME"].iloc[0]}</b> - MÊS MAIS <span style="color: green;">BARATO</span></span>'
+
     fig_indicator_min= go.Figure(
             go.Indicator(
                 mode='number+delta',
-                title={'text':f'<span style="font-size:90%">{df_min["MÊS NOME"].iloc[0]} - MÊS MAIS BARATO</span>'},
+                title={'text':title_text},
                 value=df_min['PREÇO MÉDIO REVENDA'].iloc[0],
                 number={'prefix':'R$'}
             )
@@ -349,10 +399,108 @@ def graph_indicator_min(uf,product,year,theme):
             font=dict(size=20, color='green')
         )
         
+    fig_indicator_min.update_layout(main_config, height=200, template=template)
     return fig_indicator_min
     
-        
+def graph_max_x_min_x_br(uf,product,year,theme):
     
+    product = 'GASOLINA COMUM'
+    uf='AMAZONAS'
+    year=2020
+    theme='darkly'
+    
+    template = template_theme1 if theme else template_theme2
+    
+    df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
+    
+    final_df=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    
+    df_top_mean=final_df.groupby(['ESTADO'], as_index=False)['PREÇO MÉDIO REVENDA'].mean().sort_values(by='PREÇO MÉDIO REVENDA',ascending=False)
+    
+    df_temporal_max = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year) & (df_filtered['ESTADO']==df_top_mean['ESTADO'].iloc[0])]
+    df_temporal_min = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year) & (df_filtered['ESTADO']==df_top_mean['ESTADO'].iloc[-1])]
+    
+    df_temporal_br = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    df_temporal_br=df_temporal_br.groupby('MÊS NÚMERO',as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(x=df_temporal_max['MÊS NÚMERO'],y=df_temporal_max['PREÇO MÉDIO REVENDA'], mode='lines+markers', name=df_top_mean['ESTADO'].iloc[0]))
+    
+    fig.add_trace(go.Scatter(x=df_temporal_min['MÊS NÚMERO'],y=df_temporal_min['PREÇO MÉDIO REVENDA'], mode='lines', name=df_top_mean['ESTADO'].iloc[-1]))
+    
+    fig.add_trace(go.Scatter(x=df_temporal_br['MÊS NÚMERO'],y=df_temporal_br['PREÇO MÉDIO REVENDA'], mode='lines', name='BRASIL'))
+    
+    fig.update_layout(main_config, height=200, template=template)
+    
+    return fig
+        
+def graph_dinamyc_week(uf,product,year,theme):
+    
+    # product = 'GASOLINA COMUM'
+    # uf='AMAZONAS'
+    # year=2008
+    # theme='darkly'
+    
+    template = template_theme1 if theme else template_theme2
+    
+    df_filtered = df_semanal[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','DATA FINAL','ESTADO']]
+    
+    final_df = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['ESTADO']==uf) & (df_filtered['DATA FINAL'].dt.year==year)].groupby(['ESTADO','DATA FINAL'], as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+    
+    
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(x=final_df['DATA FINAL'],y=final_df['PREÇO MÉDIO REVENDA']))
+
+    fig.update_layout(
+        xaxis=dict(
+            rangeselector=dict(
+                buttons= list([
+                    dict(count=0,
+                        label='1m',
+                        step='month',
+                        stepmode="backward",
+                        visible=False
+                    )
+                ])
+            ),
+            rangeslider=dict(
+                visible=True,
+            ),
+            
+        )
+    ),
+    fig.update_layout(main_config, height=200, template=template)
+    
+    return fig    
+   
+def graph_top_chep(uf,product,year,theme):
+    
+    # product = 'GASOLINA COMUM'
+    # uf='AMAZONAS'
+    # year=2020
+    # theme='darkly'
+    
+    template = template_theme1 if theme else template_theme2
+    
+    df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
+    
+    final_df=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    
+    df_temporal_br = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    df_temporal_br=df_temporal_br.groupby('ESTADO',as_index=False)['PREÇO MÉDIO REVENDA'].mean().sort_values(by='PREÇO MÉDIO REVENDA',ascending=True).head(5)
+    
+    fig = go.Figure(
+        go.Pie(labels=df_temporal_br['ESTADO'], values=df_temporal_br['PREÇO MÉDIO REVENDA'])
+    )
+    
+    fig.update_layout(main_config, height=200, template=template)
+    
+    
+    return fig
+ 
     
    
     
@@ -380,42 +528,7 @@ def graph_indicator_min(uf,product,year,theme):
 
 #     return fig
 
-# def graph_dinamyc_week(uf,product,year):
-    
-#     # product = 'GASOLINA COMUM'
-#     # uf='AMAZONAS'
-#     # year=2008
-    
-#     df_filtered = df_semanal[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','DATA FINAL','ESTADO']]
-    
-#     final_df = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['ESTADO']==uf) & (df_filtered['DATA FINAL'].dt.year==year)].groupby(['ESTADO','DATA FINAL'], as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-    
-    
-#     fig = go.Figure()
 
-#     fig.add_trace(
-#         go.Scatter(x=final_df['DATA FINAL'],y=final_df['PREÇO MÉDIO REVENDA']))
-
-#     fig.update_layout(
-#         xaxis=dict(
-#             rangeselector=dict(
-#                 buttons= list([
-#                     dict(count=0,
-#                         label='1m',
-#                         step='month',
-#                         stepmode="backward",
-#                         visible=False
-#                     )
-#                 ])
-#             ),
-#             rangeslider=dict(
-#                 visible=True,
-#             ),
-            
-#         )
-#     ),
-    
-#     return fig
 
 # def graph_max_min(product,uf,year):
     
