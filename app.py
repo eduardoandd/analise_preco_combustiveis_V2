@@ -80,18 +80,16 @@ app.layout = html.Div(id='div1',
                     dbc.CardBody([
                         dbc.Row([
                             dbc.Col([
-                                html.Legend('Fuel Price Brazil')
-                            ], sm=8),
-                            dbc.Col([
                                 html.I(className='fa fa-balance-scale', style={'font-size': '300%'})
-                            ], sm=4, align='center'),
-                        ]),
-                        
-                        dbc.Row([
+                            ], sm=2),
                             dbc.Col([
+                                html.Legend('Fuel Price Brazil')
+                            ], sm=8, align='center'),
+                             dbc.Col([
                                 ThemeSwitchAIO(aio_id="theme", themes=[url_theme1, url_theme2])
                             ])
-                        ], style={'margin-top':'10px'}),
+                        ],style={'margin-bottom': '5px;'}),
+                        
                         
                         dbc.Row([
                             dbc.Col([
@@ -196,7 +194,7 @@ app.layout = html.Div(id='div1',
                 dbc.Row([
                     dbc.Card([
                         dbc.CardBody([
-                            dcc.Graph(id='graph_graph_max_x_min_x_br', className='dbc', config=config_graph)
+                            dcc.Graph(id='graph_max_x_min_x_br', className='dbc', config=config_graph)
                         ])
                     ], style=tab_card)
                 ])
@@ -206,11 +204,21 @@ app.layout = html.Div(id='div1',
                 dbc.Row([
                     dbc.Card([
                         dbc.CardBody([
-                            dcc.Graph(id='graph_top_chep', className='dbc', config=config_graph)
+                            dcc.Graph(id='graph_the_most_expensive', className='dbc', config=config_graph)
+                        ])
+                    ], style=tab_card)
+                ]),
+            ],md=4),
+            
+            dbc.Col([
+                dbc.Row([
+                    dbc.Card([
+                        dbc.CardBody([
+                            dcc.Graph(id='graph_region', className='dbc', config=config_graph)
                         ])
                     ], style=tab_card)
                 ])
-            ],md=4),
+            ],md=4)
         ])
         
 ])
@@ -221,9 +229,10 @@ app.layout = html.Div(id='div1',
     Output('graph-uf', 'figure'),
     Output('graph_indicator_max', 'figure'),
     Output('graph_indicator_min', 'figure'),
-    Output('graph_graph_max_x_min_x_br', 'figure'),
+    Output('graph_max_x_min_x_br', 'figure'),
     Output('graph_dinamyc_week', 'figure'),
-    Output('graph_top_chep', 'figure'),
+    Output('graph_the_most_expensive', 'figure'),
+    Output('graph_region', 'figure'),
     # Output('graph-comparative','figure'),
     # Output('graph-region','figure'),
     # Output('graph-max-min','figure'),
@@ -242,7 +251,9 @@ def graph_select(uf,product,year,theme):
     var_graph_indicator_min=graph_indicator_min(uf,product,year,theme)
     var_graph_max_x_min_x_br=graph_max_x_min_x_br(uf,product,year,theme)
     var_graph_dinamyc_week=graph_dinamyc_week(uf,product,year,theme)
-    var_graph_top_chep=graph_top_chep(uf,product,year,theme)
+    var_graph_the_most_expensive=graph_the_most_expensive(uf,product,year,theme)
+    var_graph_top_5_cheapest=graph_top_5_cheapest(uf,product,year,theme)
+    var_graph_region=graph_region(product,year,theme)
     # var_dinamyc_week = graph_dinamyc_week(uf,product,year)
     # var_graph_uf_x_br=graph_uf_x_br(product,uf,year)
     # var_graph_max_min=graph_max_min(product,uf,year)
@@ -253,7 +264,7 @@ def graph_select(uf,product,year,theme):
     # var_graph_br_top3_cheap=graph_br_top3_cheap(product,year)
     # var_graph_region=graph_region(product,year)
     
-    return var_graph_uf,var_graph_indicator_max,var_graph_indicator_min,var_graph_max_x_min_x_br,var_graph_dinamyc_week,var_graph_top_chep
+    return var_graph_uf,var_graph_indicator_max,var_graph_indicator_min,var_graph_max_x_min_x_br,var_graph_dinamyc_week,var_graph_the_most_expensive,var_graph_region
     
     # if not option:
     #     if year >=2004:
@@ -404,32 +415,78 @@ def graph_indicator_min(uf,product,year,theme):
     
 def graph_max_x_min_x_br(uf,product,year,theme):
     
-    product = 'GASOLINA COMUM'
-    uf='AMAZONAS'
-    year=2020
-    theme='darkly'
+    # product = 'GASOLINA COMUM'
+    # uf='AMAZONAS'
+    # year=2020
+    # theme='darkly'
+    
+    estados_brasil = {
+        'Acre': {'latitude': -9.0479, 'longitude': -70.5260},
+        'Alagoas': {'latitude': -9.5713, 'longitude': -36.7819},
+        'Amapa': {'latitude': 0.9020, 'longitude': -52.0036},
+        'Amazonas': {'latitude': -3.4168, 'longitude': -65.8561},
+        'Bahia': {'latitude': -12.9714, 'longitude': -38.5014},
+        'Ceara': {'latitude': -3.7172, 'longitude': -38.5433},
+        'Distrito Federal': {'latitude': -15.7801, 'longitude': -47.9292},
+        'Espirito Santo': {'latitude': -20.3155, 'longitude': -40.3128},
+        'Goias': {'latitude': -16.6864, 'longitude': -49.2643},
+        'Maranhao': {'latitude': -5.7945, 'longitude': -35.2110},
+        'Mato Grosso': {'latitude': -12.6819, 'longitude': -56.9211},
+        'Mato Grosso do Sul': {'latitude': -20.4428, 'longitude': -54.6464},
+        'Minas Gerais': {'latitude': -19.9167, 'longitude': -43.9345},
+        'Para': {'latitude': -1.4550, 'longitude': -48.5024},
+        'Paraiba': {'latitude': -7.1219, 'longitude': -34.8829},
+        'Parana': {'latitude': -25.4284, 'longitude': -49.2733},
+        'Pernambuco': {'latitude': -8.0476, 'longitude': -34.8770},
+        'Piaui': {'latitude': -5.0919, 'longitude': -42.8034},
+        'Rio de Janeiro': {'latitude': -22.9083, 'longitude': -43.1964},
+        'Rio Grande do Norte': {'latitude': -5.7945, 'longitude': -35.2110},
+        'Rio Grande do Sul': {'latitude': -30.0346, 'longitude': -51.2177},
+        'Rondonia': {'latitude': -8.7608, 'longitude': -63.8999},
+        'Roraima': {'latitude': 2.8197, 'longitude': -60.6715},
+        'Santa Catarina': {'latitude': -27.5954, 'longitude': -48.5480},
+        'Sao Paulo': {'latitude': -23.5505, 'longitude': -46.6333},
+        'Sergipe': {'latitude': -10.9472, 'longitude': -37.0731},
+        'Tocantins': {'latitude': -10.9472, 'longitude': -37.0731}
+    }
+    
+    df_lat = pd.DataFrame([(estado.upper(), dados['latitude'], dados['longitude']) for estado, dados in estados_brasil.items()],columns=['ESTADO', 'LATITUDE', 'LONGITUDE'])
+
+
     
     template = template_theme1 if theme else template_theme2
     
     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
     
-    final_df=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    df_resultado = pd.merge(df_filtered, df_lat, on='ESTADO', how='left')
+
+    final_df=df_resultado[(df_resultado['PRODUTO']==product) & (df_resultado['MÊS'].dt.year==year)]
     
     df_top_mean=final_df.groupby(['ESTADO'], as_index=False)['PREÇO MÉDIO REVENDA'].mean().sort_values(by='PREÇO MÉDIO REVENDA',ascending=False)
     
-    df_temporal_max = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year) & (df_filtered['ESTADO']==df_top_mean['ESTADO'].iloc[0])]
-    df_temporal_min = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year) & (df_filtered['ESTADO']==df_top_mean['ESTADO'].iloc[-1])]
+    lat_max = df_resultado[(df_resultado['ESTADO']== df_top_mean['ESTADO'].iloc[0])]['LATITUDE'].iloc[0]
+    long_max = df_resultado[(df_resultado['ESTADO']== df_top_mean['ESTADO'].iloc[0])]['LONGITUDE'].iloc[0]
     
-    df_temporal_br = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
-    df_temporal_br=df_temporal_br.groupby('MÊS NÚMERO',as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+    lat_min = df_resultado[(df_resultado['ESTADO']== df_top_mean['ESTADO'].iloc[-1])]['LATITUDE'].iloc[-1]
+    long_min = df_resultado[(df_resultado['ESTADO']== df_top_mean['ESTADO'].iloc[-1])]['LONGITUDE'].iloc[-1]
     
     fig = go.Figure()
-    
-    fig.add_trace(go.Scatter(x=df_temporal_max['MÊS NÚMERO'],y=df_temporal_max['PREÇO MÉDIO REVENDA'], mode='lines+markers', name=df_top_mean['ESTADO'].iloc[0]))
-    
-    fig.add_trace(go.Scatter(x=df_temporal_min['MÊS NÚMERO'],y=df_temporal_min['PREÇO MÉDIO REVENDA'], mode='lines', name=df_top_mean['ESTADO'].iloc[-1]))
-    
-    fig.add_trace(go.Scatter(x=df_temporal_br['MÊS NÚMERO'],y=df_temporal_br['PREÇO MÉDIO REVENDA'], mode='lines', name='BRASIL'))
+
+    fig.add_trace(go.Scattergeo(
+        locationmode= 'USA-states',
+        lat=[lat_max,lat_min],
+        lon=[long_max,long_min],
+        text='ACRE',
+    ))
+
+    fig.update_layout(
+        title_text='2023',
+        showlegend=True,
+        geo = dict(
+            scope='south america',
+            landcolor= 'rgb(217, 217, 217)',
+        )
+    )
     
     fig.update_layout(main_config, height=200, template=template)
     
@@ -476,7 +533,7 @@ def graph_dinamyc_week(uf,product,year,theme):
     
     return fig    
    
-def graph_top_chep(uf,product,year,theme):
+def graph_the_most_expensive(uf,product,year,theme):
     
     # product = 'GASOLINA COMUM'
     # uf='AMAZONAS'
@@ -487,25 +544,64 @@ def graph_top_chep(uf,product,year,theme):
     
     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
     
-    final_df=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    df_=df_filtered[(df_filtered['MÊS'].dt.year == year) & (df_filtered['PRODUTO'] == product)]
     
-    df_temporal_br = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
-    df_temporal_br=df_temporal_br.groupby('ESTADO',as_index=False)['PREÇO MÉDIO REVENDA'].mean().sort_values(by='PREÇO MÉDIO REVENDA',ascending=True).head(5)
+    df_=df_.groupby('ESTADO',as_index=False)['PREÇO MÉDIO REVENDA'].mean().sort_values(ascending=False,by='PREÇO MÉDIO REVENDA').head(5)
     
-    fig = go.Figure(
-        go.Pie(labels=df_temporal_br['ESTADO'], values=df_temporal_br['PREÇO MÉDIO REVENDA'])
-    )
-    
-    fig.update_layout(main_config, height=200, template=template)
-    
+    fig = go.Figure()
+    for i in range(len(df_)):
+        estado=df_['ESTADO'].iloc[i]
+        
+        df_estado=df_filtered[(df_filtered['ESTADO']==estado) & (df_filtered['MÊS'].dt.year == year) & (df_filtered['PRODUTO'] == product) ]
+        
+        fig.add_trace(go.Scatter(x=df_estado['MÊS NÚMERO'],y=df_estado['PREÇO MÉDIO REVENDA'], mode='lines+markers', name=df_estado['ESTADO'].iloc[0]))
+
+    fig.update_layout(main_config, height=300, template=template)
     
     return fig
- 
+
+def graph_top_5_cheapest(uf,product,year,theme):
     
-   
+    # product = 'GASOLINA COMUM'
+    # uf='AMAZONAS'
+    # year=2020
+    # theme='darkly'
     
+    template = template_theme1 if theme else template_theme2
     
+    df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
     
+    df_=df_filtered[(df_filtered['MÊS'].dt.year == year) & (df_filtered['PRODUTO'] == product)]
+    
+    df_=df_.groupby('ESTADO',as_index=False)['PREÇO MÉDIO REVENDA'].mean().sort_values(ascending=True,by='PREÇO MÉDIO REVENDA').head(5)
+    
+    fig = go.Figure()
+    for i in range(len(df_)):
+        estado=df_['ESTADO'].iloc[i]
+        
+        df_estado=df_filtered[(df_filtered['ESTADO']==estado) & (df_filtered['MÊS'].dt.year == year) & (df_filtered['PRODUTO'] == product) ]
+        
+        fig.add_trace(go.Scatter(x=df_estado['MÊS NÚMERO'],y=df_estado['PREÇO MÉDIO REVENDA'], mode='lines+markers', name=df_estado['ESTADO'].iloc[0]))
+
+    fig.update_layout(main_config, height=400, template=template)
+    
+    return fig
+
+def graph_region(product,year,theme):
+    
+    template = template_theme1 if theme else template_theme2
+    
+    df_filtered = df[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','MÊS','ESTADO']]
+                
+    df_= df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+            
+    final_df=df_.groupby('REGIÃO',as_index=False)['PREÇO MÉDIO REVENDA'].mean()
+        
+    fig = px.bar(final_df, x='PREÇO MÉDIO REVENDA', y='REGIÃO', color='REGIÃO', orientation='h', barmode='group')
+    
+    fig.update_layout(main_config, height=300, template=template)
+    
+    return fig 
     
    
 # def graph_uf_x_br(product,uf,year):
@@ -613,18 +709,7 @@ def graph_top_chep(uf,product,year,theme):
     
 #     return fig
 
-# def graph_region(product,year):
-#     df_filtered = df[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','MÊS','ESTADO']]
-                
-#     df_= df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
-            
-#     final_df=df_.groupby('REGIÃO',as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-        
-#     fig = px.bar(final_df, x='PREÇO MÉDIO REVENDA', y='REGIÃO', color='REGIÃO', orientation='h', barmode='group')
-    
-#     fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
-    
-#     return fig
+
 
 # def graph_max_min_br(product,year):
     
@@ -648,4 +733,4 @@ def graph_top_chep(uf,product,year,theme):
     # return fig
 
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8040)
+    app.run_server(debug=True,port=8044)
