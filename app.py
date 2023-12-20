@@ -14,6 +14,16 @@ import plotly.graph_objects as go
 import pandas as pd
 from dash_bootstrap_templates import ThemeSwitchAIO
 import dash
+import geopandas as gpd
+import geobr
+from geodatasets import get_path
+from shapely.geometry import Point
+import matplotlib.pyplot as plt
+import contextily as cx
+import plotly.figure_factory as ff
+
+
+
 
 # #INGESTÃO DE DADOS
 df1=pd.read_excel('2001.xlsx')
@@ -81,15 +91,14 @@ app.layout = html.Div(id='div1',
                         dbc.Row([
                             dbc.Col([
                                 html.I(className='fa fa-balance-scale', style={'font-size': '300%'})
-                            ], sm=2),
+                            ], sm=2,style={'margin-bottom': '5px;'}),
                             dbc.Col([
                                 html.Legend('Fuel Price Brazil')
-                            ], sm=8, align='center'),
+                            ], sm=8, align='center',style={'margin-bottom': '5px;'}),
                              dbc.Col([
                                 ThemeSwitchAIO(aio_id="theme", themes=[url_theme1, url_theme2])
-                            ])
-                        ],style={'margin-bottom': '5px;'}),
-                        
+                            ],style={'margin-bottom': '5px;'})
+                        ], style={'position':'relative', 'bottom':'7px'}),
                         
                         dbc.Row([
                             dbc.Col([
@@ -125,7 +134,7 @@ app.layout = html.Div(id='div1',
                                             
                                         ])
                                     ])
-                                ], style=tab_card)
+                                ], style={**tab_card, 'padding': '0px 0px 33px 0px'})
                             ])
                         ])
                         
@@ -186,7 +195,7 @@ app.layout = html.Div(id='div1',
                     ],sm=12)
                 ])
             ],md=8)
-        ]),
+        ],className='g-2 my-auto', style={'margin-top': '7px'}),
         
         #ROW 3
         dbc.Row([
@@ -219,7 +228,7 @@ app.layout = html.Div(id='div1',
                     ], style=tab_card)
                 ])
             ],md=4)
-        ])
+        ],className='g-2 my-auto', style={'margin-top': '7px'})
         
 ])
 
@@ -309,11 +318,13 @@ def graph_uf(uf,product,year,theme):
 
 def graph_indicator_max(uf,product,year,theme):
     
-    template = template_theme1 if theme else template_theme2
-    
     # product ='GASOLINA COMUM'
     # year=2002
     # uf='SERGIPE'
+    # theme='darkly'
+    
+    template = template_theme1 if theme else template_theme2
+    
     
     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
     
@@ -322,10 +333,9 @@ def graph_indicator_max(uf,product,year,theme):
     df_max=final_df.groupby('MÊS NOME',as_index=False)['PREÇO MÉDIO REVENDA'].max().sort_values(by='PREÇO MÉDIO REVENDA', ascending=False).head(1)
     
     #ANO ANTERIOR
-    df_ano_interior=df_filtered[(df_filtered['ESTADO']==uf) & (df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year-1)]
-    df_max_anterior=df_ano_interior.groupby('MÊS NOME',as_index=False)['PREÇO MÉDIO REVENDA'].max().sort_values(by='PREÇO MÉDIO REVENDA', ascending=False).head(1)
+    df_ano_interior=df_filtered[(df_filtered['ESTADO']==uf) & (df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year-1) & (df_filtered['MÊS NOME']==df_max['MÊS NOME'].iloc[0])]
     
-    variacao_porcentual_max= ((df_max['PREÇO MÉDIO REVENDA'].max() - df_max_anterior['PREÇO MÉDIO REVENDA'].max()) /  df_max_anterior['PREÇO MÉDIO REVENDA'].max()) * 100
+    variacao_porcentual_max= ((df_max['PREÇO MÉDIO REVENDA'].max() - df_ano_interior['PREÇO MÉDIO REVENDA'].max()) /  df_ano_interior['PREÇO MÉDIO REVENDA'].max()) * 100
     
     title_text = f'<span style="font-size:90%; margin-top: 100px;"><b>{df_max["MÊS NOME"].iloc[0]}</b> - MÊS MAIS <span style="color: red;">CARO</span></span>'
         
@@ -366,7 +376,7 @@ def graph_indicator_min(uf,product,year,theme):
     template = template_theme1 if theme else template_theme2
     
     # product ='GASOLINA COMUM'
-    # year=2002
+    #year=2003
     # uf='SERGIPE'
     
     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
@@ -376,10 +386,10 @@ def graph_indicator_min(uf,product,year,theme):
     df_min=final_df.groupby('MÊS NOME',as_index=False)['PREÇO MÉDIO REVENDA'].min().sort_values(by='PREÇO MÉDIO REVENDA', ascending=True).head(1)
     
     #ANO ANTERIOR
-    df_ano_interior=df_filtered[(df_filtered['ESTADO']==uf) & (df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year-1)]
-    df_min_anterior=df_ano_interior.groupby('MÊS NOME',as_index=False)['PREÇO MÉDIO REVENDA'].min().sort_values(by='PREÇO MÉDIO REVENDA', ascending=True).head(1)
+    df_ano_interior=df_filtered[(df_filtered['ESTADO']==uf) & (df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year-1) & (df_filtered['MÊS NOME']==df_min['MÊS NOME'].iloc[0])]
     
-    variacao_porcentual_min= ((df_min['PREÇO MÉDIO REVENDA'].min() - df_min_anterior['PREÇO MÉDIO REVENDA'].min()) /  df_min_anterior['PREÇO MÉDIO REVENDA'].min()) * 100
+    
+    variacao_porcentual_min= ((df_min['PREÇO MÉDIO REVENDA'].min() - df_ano_interior['PREÇO MÉDIO REVENDA'].min()) /  df_ano_interior['PREÇO MÉDIO REVENDA'].min()) * 100
     
     title_text = f'<span style="font-size:90%;"><b>{df_min["MÊS NOME"].iloc[0]}</b> - MÊS MAIS <span style="color: green;">BARATO</span></span>'
 
@@ -415,43 +425,46 @@ def graph_indicator_min(uf,product,year,theme):
     
 def graph_max_x_min_x_br(uf,product,year,theme):
     
-    # product = 'GASOLINA COMUM'
-    # uf='AMAZONAS'
-    # year=2020
-    # theme='darkly'
+    product = 'GASOLINA COMUM'
+    uf='AMAZONAS'
+    year=2020
+    theme='darkly'
     
     estados_brasil = {
-        'Acre': {'latitude': -9.0479, 'longitude': -70.5260},
-        'Alagoas': {'latitude': -9.5713, 'longitude': -36.7819},
-        'Amapa': {'latitude': 0.9020, 'longitude': -52.0036},
-        'Amazonas': {'latitude': -3.4168, 'longitude': -65.8561},
-        'Bahia': {'latitude': -12.9714, 'longitude': -38.5014},
-        'Ceara': {'latitude': -3.7172, 'longitude': -38.5433},
-        'Distrito Federal': {'latitude': -15.7801, 'longitude': -47.9292},
-        'Espirito Santo': {'latitude': -20.3155, 'longitude': -40.3128},
-        'Goias': {'latitude': -16.6864, 'longitude': -49.2643},
-        'Maranhao': {'latitude': -5.7945, 'longitude': -35.2110},
-        'Mato Grosso': {'latitude': -12.6819, 'longitude': -56.9211},
-        'Mato Grosso do Sul': {'latitude': -20.4428, 'longitude': -54.6464},
-        'Minas Gerais': {'latitude': -19.9167, 'longitude': -43.9345},
-        'Para': {'latitude': -1.4550, 'longitude': -48.5024},
-        'Paraiba': {'latitude': -7.1219, 'longitude': -34.8829},
-        'Parana': {'latitude': -25.4284, 'longitude': -49.2733},
-        'Pernambuco': {'latitude': -8.0476, 'longitude': -34.8770},
-        'Piaui': {'latitude': -5.0919, 'longitude': -42.8034},
-        'Rio de Janeiro': {'latitude': -22.9083, 'longitude': -43.1964},
-        'Rio Grande do Norte': {'latitude': -5.7945, 'longitude': -35.2110},
-        'Rio Grande do Sul': {'latitude': -30.0346, 'longitude': -51.2177},
-        'Rondonia': {'latitude': -8.7608, 'longitude': -63.8999},
-        'Roraima': {'latitude': 2.8197, 'longitude': -60.6715},
-        'Santa Catarina': {'latitude': -27.5954, 'longitude': -48.5480},
-        'Sao Paulo': {'latitude': -23.5505, 'longitude': -46.6333},
-        'Sergipe': {'latitude': -10.9472, 'longitude': -37.0731},
-        'Tocantins': {'latitude': -10.9472, 'longitude': -37.0731}
-    }
-    
-    df_lat = pd.DataFrame([(estado.upper(), dados['latitude'], dados['longitude']) for estado, dados in estados_brasil.items()],columns=['ESTADO', 'LATITUDE', 'LONGITUDE'])
+        'Acre': {'latitude': -9.0479, 'longitude': -70.5260, 'sigla': 'AC'},
+        'Alagoas': {'latitude': -9.5713, 'longitude': -36.7819, 'sigla': 'AL'},
+        'Amapa': {'latitude': 0.9020, 'longitude': -52.0036, 'sigla': 'AP'},
+        'Amazonas': {'latitude': -3.4168, 'longitude': -65.8561, 'sigla': 'AM'},
+        'Bahia': {'latitude': -12.9714, 'longitude': -38.5014, 'sigla': 'BA'},
+        'Ceara': {'latitude': -3.7172, 'longitude': -38.5433, 'sigla': 'CE'},
+        'Distrito Federal': {'latitude': -15.7801, 'longitude': -47.9292, 'sigla': 'DF'},
+        'Espirito Santo': {'latitude': -20.3155, 'longitude': -40.3128, 'sigla': 'ES'},
+        'Goias': {'latitude': -16.6864, 'longitude': -49.2643, 'sigla': 'GO'},
+        'Maranhao': {'latitude': -5.7945, 'longitude': -35.2110, 'sigla': 'MA'},
+        'Mato Grosso': {'latitude': -12.6819, 'longitude': -56.9211, 'sigla': 'MT'},
+        'Mato Grosso do Sul': {'latitude': -20.4428, 'longitude': -54.6464, 'sigla': 'MS'},
+        'Minas Gerais': {'latitude': -19.9167, 'longitude': -43.9345, 'sigla': 'MG'},
+        'Para': {'latitude': -1.4550, 'longitude': -48.5024, 'sigla': 'PA'},
+        'Paraiba': {'latitude': -7.1219, 'longitude': -34.8829, 'sigla': 'PB'},
+        'Parana': {'latitude': -25.4284, 'longitude': -49.2733, 'sigla': 'PR'},
+        'Pernambuco': {'latitude': -8.0476, 'longitude': -34.8770, 'sigla': 'PE'},
+        'Piaui': {'latitude': -5.0919, 'longitude': -42.8034, 'sigla': 'PI'},
+        'Rio de Janeiro': {'latitude': -22.9083, 'longitude': -43.1964, 'sigla': 'RJ'},
+        'Rio Grande do Norte': {'latitude': -5.7945, 'longitude': -35.2110, 'sigla': 'RN'},
+        'Rio Grande do Sul': {'latitude': -30.0346, 'longitude': -51.2177, 'sigla': 'RS'},
+        'Rondonia': {'latitude': -8.7608, 'longitude': -63.8999, 'sigla': 'RO'},
+        'Roraima': {'latitude': 2.8197, 'longitude': -60.6715, 'sigla': 'RR'},
+        'Santa Catarina': {'latitude': -27.5954, 'longitude': -48.5480, 'sigla': 'SC'},
+        'Sao Paulo': {'latitude': -23.5505, 'longitude': -46.6333, 'sigla': 'SP'},
+        'Sergipe': {'latitude': -10.9472, 'longitude': -37.0731, 'sigla': 'SE'},
+        'Tocantins': {'latitude': -10.9472, 'longitude': -37.0731, 'sigla': 'TO'}
+    }   
 
+    
+    df_lat = pd.DataFrame(
+        [(estado.upper(), dados['latitude'], dados['longitude'], dados['sigla']) for estado, dados in estados_brasil.items()],
+        columns=['ESTADO', 'LATITUDE', 'LONGITUDE', 'SIGLA']
+    )
 
     
     template = template_theme1 if theme else template_theme2
@@ -460,35 +473,26 @@ def graph_max_x_min_x_br(uf,product,year,theme):
     
     df_resultado = pd.merge(df_filtered, df_lat, on='ESTADO', how='left')
 
-    final_df=df_resultado[(df_resultado['PRODUTO']==product) & (df_resultado['MÊS'].dt.year==year)]
+    final_df=df_resultado[(df_resultado['PRODUTO']==product) & (df_resultado['MÊS'].dt.year==year) & (df_resultado['ESTADO']==uf)]
+        
+    df_country = geobr.read_country(year=2020)
     
-    df_top_mean=final_df.groupby(['ESTADO'], as_index=False)['PREÇO MÉDIO REVENDA'].mean().sort_values(by='PREÇO MÉDIO REVENDA',ascending=False)
+    df_country.crs = 'EPSG:4326'
     
-    lat_max = df_resultado[(df_resultado['ESTADO']== df_top_mean['ESTADO'].iloc[0])]['LATITUDE'].iloc[0]
-    long_max = df_resultado[(df_resultado['ESTADO']== df_top_mean['ESTADO'].iloc[0])]['LONGITUDE'].iloc[0]
-    
-    lat_min = df_resultado[(df_resultado['ESTADO']== df_top_mean['ESTADO'].iloc[-1])]['LATITUDE'].iloc[-1]
-    long_min = df_resultado[(df_resultado['ESTADO']== df_top_mean['ESTADO'].iloc[-1])]['LONGITUDE'].iloc[-1]
-    
-    fig = go.Figure()
+    df_wm = df_country.to_crs(epsg=3857)
+    for index, row in df_wm.iterrows():
+        name_state_normalized = unicodedata.normalize('NFKD', row['name_state']).encode('ASCII', 'ignore').decode('utf-8')
+        df_wm.at[index, 'name_state'] = name_state_normalized.upper()
 
-    fig.add_trace(go.Scattergeo(
-        locationmode= 'USA-states',
-        lat=[lat_max,lat_min],
-        lon=[long_max,long_min],
-        text='ACRE',
-    ))
+    ax = df_wm.plot(figsize=(10, 10), alpha=0.5, edgecolor="k")
 
-    fig.update_layout(
-        title_text='2023',
-        showlegend=True,
-        geo = dict(
-            scope='south america',
-            landcolor= 'rgb(217, 217, 217)',
-        )
-    )
+    cx.add_basemap(ax)
+
+    uf_geometry = df_wm[df_wm['name_state'] == 'ACRE']['geometry']
+
+    fig_mat=uf_geometry.plot(ax=ax, color='red', alpha=0.7, edgecolor='k')
     
-    fig.update_layout(main_config, height=200, template=template)
+    fig= ff.create_table([fig_mat])
     
     return fig
         
