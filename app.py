@@ -18,65 +18,71 @@ import sqlite3
 
 # #INGESTÃO DE DADOS
 
-conn = sqlite3.connect('web.db')
+conn = sqlite3.connect('web.db',check_same_thread=False)
 
-df1=pd.read_excel('2001.xlsx')
-df2=pd.read_excel('2013.xlsx')  
-df1.columns = df2.columns
+# df1=pd.read_excel('2001.xlsx')
+# df2=pd.read_excel('2013.xlsx')  
+# df1.columns = df2.columns
 
-#REMOVENDOS OS ACENTOS DAS LINHAS
-for i in range(len(df1)):
-    linha= df1.iloc[i,1]
-    linha_sem_acentos = unicodedata.normalize('NFD', linha).encode('ascii', 'ignore').decode('utf-8')
-    df1.iloc[i, 1] = linha_sem_acentos  
+# #REMOVENDOS OS ACENTOS DAS LINHAS
+# for i in range(len(df1)):
+#     linha= df1.iloc[i,1]
+#     linha_sem_acentos = unicodedata.normalize('NFD', linha).encode('ascii', 'ignore').decode('utf-8')
+#     df1.iloc[i, 1] = linha_sem_acentos  
            
-df= pd.concat([df1,df2])
+# df= pd.concat([df1,df2])
 
-month_name = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'}
-df['MÊS NÚMERO']= df['MÊS'].dt.month
-df['MÊS NOME']= df['MÊS NÚMERO'].map(month_name)
+# month_name = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'}
+
+# df['MÊS NÚMERO']= df['MÊS'].dt.month
+# df['MÊS NOME']= df['MÊS NÚMERO'].map(month_name)
+
+# for i in range(len(df)):
+#     df['ANO']= df['MÊS'].dt.year
 
 
-df1_semanal=pd.read_excel('semanal-estados-2004-a-2012.xlsx',skiprows=12)
-df2_semanal=pd.read_excel('semanal-estados-desde-2013.xlsx',skiprows=17)
-#REMOVENDOS OS ACENTOS DAS LINHAS
-for i in range(len(df1)):
-    linha= df1_semanal.iloc[i,4]
-    linha_sem_acentos = unicodedata.normalize('NFD', linha).encode('ascii', 'ignore').decode('utf-8')
-    df1_semanal.iloc[i, 4] = linha_sem_acentos  
+# df1_semanal=pd.read_excel('semanal-estados-2004-a-2012.xlsx',skiprows=12)
+# df2_semanal=pd.read_excel('semanal-estados-desde-2013.xlsx',skiprows=17)
+# #REMOVENDOS OS ACENTOS DAS LINHAS
+# for i in range(len(df1)):
+#     linha= df1_semanal.iloc[i,4]
+#     linha_sem_acentos = unicodedata.normalize('NFD', linha).encode('ascii', 'ignore').decode('utf-8')
+#     df1_semanal.iloc[i, 4] = linha_sem_acentos  
        
-df_semanal= pd.concat([df1_semanal,df2_semanal])
+# df_semanal= pd.concat([df1_semanal,df2_semanal])
 
-#======================= SQL =======================
-# c= conn.cursor()
+# for i in range(len(df_semanal)):
+#     df_semanal['ANO']= df_semanal['DATA FINAL'].dt.year
+
+# #======================= SQL =======================
+c= conn.cursor()
 
 # #MENSAL ESTADO
-# df.index.name='ID'
+# # df.index.name='ID'
 # df.to_sql('MENSAL_ESTADO', conn, index_label='ID')
 
-# #SEMANAL ESTADO
-# df_semanal.index.name='ID'
+# # #SEMANAL ESTADO
+# # df_semanal.index.name='ID'
 # df_semanal.to_sql('SEMANAL_ESTADO', conn, index_label='ID')
 
+# # #SELECT
+# # c.execute('SELECT  PREÇO MÉDIO REVENDA,ESTADO,PRODUTO FROM MENSAL_ESTADO WHERE ESTADO = "ACRE" AND PRODUTO="GASOLINA COMUM"')
+# # c.fetchone()
+# # c.fetchall()
+# # df_fetch= pd.DataFrame(c.fetchall())
+
+# # query= 'SELECT PRODUTO FROM MENSAL_ESTADO'
+# # df_query= pd.read_sql_query(query, conn).drop_duplicates()
 
 
-
-# #SELECT
-# c.execute('SELECT  PREÇO MÉDIO REVENDA,ESTADO,PRODUTO FROM MENSAL_ESTADO WHERE ESTADO = "ACRE" AND PRODUTO="GASOLINA COMUM"')
-# c.fetchone()
-# c.fetchall()
-# df_fetch= pd.DataFrame(c.fetchall())
-
-# query= 'SELECT PRODUTO FROM MENSAL_ESTADO'
-# df_query= pd.read_sql_query(query, conn).drop_duplicates()
-
+# c.execute('DROP TABLE MENSAL_ESTADO')
+# c.execute('DROP TABLE SEMANAL_ESTADO')
 
 # #VAR AUX. 
-uf_list= df['ESTADO'].drop_duplicates().tolist()
-products_list= df['PRODUTO'].drop_duplicates()
-year_list=df['MÊS'].dt.year.drop_duplicates()
-option_list = ['Brasil','Estados']
-filter_list = ['MAX','MIN']
+uf_list= pd.read_sql_query('SELECT ESTADO FROM MENSAL_ESTADO',conn).drop_duplicates()['ESTADO'].tolist()
+products_list= pd.read_sql_query('SELECT PRODUTO FROM MENSAL_ESTADO',conn).drop_duplicates()['PRODUTO'].tolist()
+year_list = pd.read_sql_query('SELECT ANO FROM MENSAL_ESTADO',conn).drop_duplicates()['ANO'].tolist()
+
 
 template_theme1='flatly'
 template_theme2='darkly'
@@ -88,6 +94,7 @@ main_config = {
     "margin": {"l":10,"r":10,"t":10,"b":10}
 }
 config_graph={"displayModeBar":False, "showTips":False}
+
 
 #========= Layout =============
 
@@ -293,17 +300,15 @@ def graph_uf(uf,product,year,theme):
     # uf='SERGIPE'
     
     template = template_theme1 if theme else template_theme2
-    month_name = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'}
     
-    #============================================================#
+    query = f'''
+        SELECT * FROM MENSAL_ESTADO 
+        WHERE PRODUTO = '{product}' AND ESTADO = '{uf}' AND ANO = {year}
+    '''
+
+    df_query = pd.read_sql_query(query, conn)
     
-    df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
-    
-    final_df=df_filtered[(df_filtered['ESTADO']==uf) & (df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)] 
-    final_df['MÊS NÚMERO']= final_df['MÊS'].dt.month
-    final_df['MÊS NOME']= final_df['MÊS NÚMERO'].map(month_name)
-    
-    fig=px.bar(final_df, y='PREÇO MÉDIO REVENDA',x='MÊS NÚMERO',color='MÊS NOME')
+    fig=px.bar(df_query, y='PREÇO MÉDIO REVENDA',x='MÊS NÚMERO',color='MÊS NOME')
     
     fig.update_layout(main_config, height=260, template=template)
 
@@ -313,21 +318,27 @@ def graph_uf(uf,product,year,theme):
 def graph_indicator_max(uf,product,year,theme):
     
     # product ='GASOLINA COMUM'
-    # year=2002
+    # year=2003
     # uf='SERGIPE'
     # theme='darkly'
     
     template = template_theme1 if theme else template_theme2
     
+    query = f'''
+        SELECT * FROM MENSAL_ESTADO 
+        WHERE PRODUTO = '{product}' AND ESTADO = '{uf}' AND ANO = {year}
+    '''
+
+    query_anterior = f'SELECT * FROM MENSAL_ESTADO WHERE PRODUTO = "{product}" AND ESTADO = "{uf}" AND ANO = {year-1}'
     
-    df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
+    df_query = pd.read_sql_query(query, conn)
+    df_query_anterior = pd.read_sql_query(query_anterior, conn)
     
-    final_df=df_filtered[(df_filtered['ESTADO']==uf) & (df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
-    
-    df_max=final_df.groupby('MÊS NOME',as_index=False)['PREÇO MÉDIO REVENDA'].max().sort_values(by='PREÇO MÉDIO REVENDA', ascending=False).head(1)
+    df_max=df_query.groupby('MÊS NOME',as_index=False)['PREÇO MÉDIO REVENDA'].max().sort_values(by='PREÇO MÉDIO REVENDA', ascending=False).head(1)
     
     #ANO ANTERIOR
-    df_ano_interior=df_filtered[(df_filtered['ESTADO']==uf) & (df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year-1) & (df_filtered['MÊS NOME']==df_max['MÊS NOME'].iloc[0])]
+    df_ano_interior=df_query_anterior[(df_query_anterior['ESTADO']==uf) & (df_query_anterior['PRODUTO']==product) & (df_query_anterior['ANO']==year-1) & (df_query_anterior['MÊS NOME']==df_max['MÊS NOME'].iloc[0])]
+    
     
     variacao_porcentual_max= ((df_max['PREÇO MÉDIO REVENDA'].max() - df_ano_interior['PREÇO MÉDIO REVENDA'].max()) /  df_ano_interior['PREÇO MÉDIO REVENDA'].max()) * 100
     
@@ -373,15 +384,20 @@ def graph_indicator_min(uf,product,year,theme):
     #year=2003
     # uf='SERGIPE'
     
-    df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
+    query = f'''
+        SELECT * FROM MENSAL_ESTADO 
+        WHERE PRODUTO = '{product}' AND ESTADO = '{uf}' AND ANO = {year}
+    '''
+
+    query_anterior = f'SELECT * FROM MENSAL_ESTADO WHERE PRODUTO = "{product}" AND ESTADO = "{uf}" AND ANO = {year-1}'
     
-    final_df=df_filtered[(df_filtered['ESTADO']==uf) & (df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    df_query = pd.read_sql_query(query, conn)
+    df_query_anterior = pd.read_sql_query(query_anterior, conn)
     
-    df_min=final_df.groupby('MÊS NOME',as_index=False)['PREÇO MÉDIO REVENDA'].min().sort_values(by='PREÇO MÉDIO REVENDA', ascending=True).head(1)
+    df_min=df_query.groupby('MÊS NOME',as_index=False)['PREÇO MÉDIO REVENDA'].min().sort_values(by='PREÇO MÉDIO REVENDA', ascending=True).head(1)
     
     #ANO ANTERIOR
-    df_ano_interior=df_filtered[(df_filtered['ESTADO']==uf) & (df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year-1) & (df_filtered['MÊS NOME']==df_min['MÊS NOME'].iloc[0])]
-    
+    df_ano_interior=df_query_anterior[(df_query_anterior['ESTADO']==uf) & (df_query_anterior['PRODUTO']==product) & (df_query_anterior['MÊS']==year-1) & (df_query_anterior['MÊS NOME']==df_min['MÊS NOME'].iloc[0])]
     
     variacao_porcentual_min= ((df_min['PREÇO MÉDIO REVENDA'].min() - df_ano_interior['PREÇO MÉDIO REVENDA'].min()) /  df_ano_interior['PREÇO MÉDIO REVENDA'].min()) * 100
     
@@ -415,6 +431,7 @@ def graph_indicator_min(uf,product,year,theme):
         )
         
     fig_indicator_min.update_layout(main_config, height=300, template=template)
+    
     return fig_indicator_min
     
 def graph_max_x_min_x_br(uf,product,year,theme):
@@ -473,17 +490,17 @@ def graph_dinamyc_week(uf,product,year,theme):
     
     template = template_theme1 if theme else template_theme2
     
-    # query = f'SELECT * FROM SEMANAL_ESTADO WHERE PRODUTO'
-    
-    df_filtered = df_semanal[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','DATA FINAL','ESTADO']]
-    
-    final_df = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['ESTADO']==uf) & (df_filtered['DATA FINAL'].dt.year==year)].groupby(['ESTADO','DATA FINAL'], as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-    
-    
+    query = f'''
+        SELECT * FROM SEMANAL_ESTADO 
+        WHERE PRODUTO = '{product}' AND ESTADO = '{uf}' AND ANO = {year}
+    '''
+
+    df_query = pd.read_sql_query(query, conn)
+        
     fig = go.Figure()
 
     fig.add_trace(
-        go.Scatter(x=final_df['DATA FINAL'],y=final_df['PREÇO MÉDIO REVENDA']))
+        go.Scatter(x=df_query['DATA FINAL'],y=df_query['PREÇO MÉDIO REVENDA']))
 
     fig.update_layout(
         xaxis=dict(
@@ -516,17 +533,18 @@ def graph_the_most_expensive(uf,product,year,theme):
     
     template = template_theme1 if theme else template_theme2
     
-    df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
-    
-    df_=df_filtered[(df_filtered['MÊS'].dt.year == year) & (df_filtered['PRODUTO'] == product)]
-    
-    df_=df_.groupby('ESTADO',as_index=False)['PREÇO MÉDIO REVENDA'].mean().sort_values(ascending=False,by='PREÇO MÉDIO REVENDA').head(5)
+    query = f'''
+        SELECT * FROM MENSAL_ESTADO 
+        WHERE PRODUTO = '{product}' AND ESTADO = '{uf}' AND ANO = {year}
+    '''
+
+    df_query = pd.read_sql_query(query, conn)
     
     fig = go.Figure()
-    for i in range(len(df_)):
-        estado=df_['ESTADO'].iloc[i]
+    for i in range(len(df_query)):
+        estado=df_query['ESTADO'].iloc[i]
         
-        df_estado=df_filtered[(df_filtered['ESTADO']==estado) & (df_filtered['MÊS'].dt.year == year) & (df_filtered['PRODUTO'] == product) ]
+        df_estado=df_query[(df_query['ESTADO']==estado) & (df_query['ANO'] == year) & (df_query['PRODUTO'] == product) ]
         
         fig.add_trace(go.Scatter(x=df_estado['MÊS NÚMERO'],y=df_estado['PREÇO MÉDIO REVENDA'], mode='lines+markers', name=df_estado['ESTADO'].iloc[0]))
 
@@ -541,11 +559,18 @@ def graph_top_5_cheapest(uf,product,year,theme):
     # year=2020
     # theme='darkly'
     
+    query = f'''
+        SELECT * FROM MENSAL_ESTADO 
+        WHERE PRODUTO = '{product}' AND ESTADO = '{uf}' AND ANO = {year}
+    '''
+
+    df_query = pd.read_sql_query(query, conn)
+    
     template = template_theme1 if theme else template_theme2
     
-    df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
+    df_filtered= df_query[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME','ANO']]
     
-    df_=df_filtered[(df_filtered['MÊS'].dt.year == year) & (df_filtered['PRODUTO'] == product)]
+    df_=df_query[(df_query['ANO'] == year) & (df_query['PRODUTO'] == product)]
     
     df_=df_.groupby('ESTADO',as_index=False)['PREÇO MÉDIO REVENDA'].mean().sort_values(ascending=True,by='PREÇO MÉDIO REVENDA').head(5)
     
@@ -553,7 +578,7 @@ def graph_top_5_cheapest(uf,product,year,theme):
     for i in range(len(df_)):
         estado=df_['ESTADO'].iloc[i]
         
-        df_estado=df_filtered[(df_filtered['ESTADO']==estado) & (df_filtered['MÊS'].dt.year == year) & (df_filtered['PRODUTO'] == product) ]
+        df_estado=df_filtered[(df_filtered['ESTADO']==estado) & (df_filtered['ANO'] == year) & (df_filtered['PRODUTO'] == product) ]
         
         fig.add_trace(go.Scatter(x=df_estado['MÊS NÚMERO'],y=df_estado['PREÇO MÉDIO REVENDA'], mode='lines+markers', name=df_estado['ESTADO'].iloc[0]))
 
@@ -563,11 +588,18 @@ def graph_top_5_cheapest(uf,product,year,theme):
 
 def graph_region(product,year,theme):
     
+    query = f'''
+        SELECT * FROM MENSAL_ESTADO 
+        WHERE PRODUTO = '{product}' AND ANO = {year}
+    '''
+
+    df_query = pd.read_sql_query(query, conn)
+    
     template = template_theme1 if theme else template_theme2
     
-    df_filtered = df[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','MÊS','ESTADO']]
+    df_filtered = df_query[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','MÊS','ESTADO','ANO']]
                 
-    df_= df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
+    df_= df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['ANO']==year)]
             
     final_df=df_.groupby('REGIÃO',as_index=False)['PREÇO MÉDIO REVENDA'].mean()
         
@@ -579,4 +611,4 @@ def graph_region(product,year,theme):
     
 
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8051)
+    app.run_server(debug=True,port=8060)
