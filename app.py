@@ -14,8 +14,12 @@ import pandas as pd
 from dash_bootstrap_templates import ThemeSwitchAIO
 import dash
 import geopandas as gpd
+import sqlite3
 
 # #INGESTÃO DE DADOS
+
+conn = sqlite3.connect('web.db')
+
 df1=pd.read_excel('2001.xlsx')
 df2=pd.read_excel('2013.xlsx')  
 df1.columns = df2.columns
@@ -42,6 +46,29 @@ for i in range(len(df1)):
     df1_semanal.iloc[i, 4] = linha_sem_acentos  
        
 df_semanal= pd.concat([df1_semanal,df2_semanal])
+
+#======================= SQL =======================
+# c= conn.cursor()
+
+# #MENSAL ESTADO
+# df.index.name='ID'
+# df.to_sql('MENSAL_ESTADO', conn, index_label='ID')
+
+# #SEMANAL ESTADO
+# df_semanal.index.name='ID'
+# df_semanal.to_sql('SEMANAL_ESTADO', conn, index_label='ID')
+
+
+
+
+# #SELECT
+# c.execute('SELECT  PREÇO MÉDIO REVENDA,ESTADO,PRODUTO FROM MENSAL_ESTADO WHERE ESTADO = "ACRE" AND PRODUTO="GASOLINA COMUM"')
+# c.fetchone()
+# c.fetchall()
+# df_fetch= pd.DataFrame(c.fetchall())
+
+# query= 'SELECT PRODUTO FROM MENSAL_ESTADO'
+# df_query= pd.read_sql_query(query, conn).drop_duplicates()
 
 
 # #VAR AUX. 
@@ -445,6 +472,8 @@ def graph_dinamyc_week(uf,product,year,theme):
     # theme='darkly'
     
     template = template_theme1 if theme else template_theme2
+    
+    # query = f'SELECT * FROM SEMANAL_ESTADO WHERE PRODUTO'
     
     df_filtered = df_semanal[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','DATA FINAL','ESTADO']]
     
