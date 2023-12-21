@@ -1,11 +1,10 @@
 import dash
-from dash import html,dcc,Output,Input,State
+from dash import html,dcc,Output,Input
 import pandas as pd
 import plotly.express as px
 import unicodedata
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
-import plotly.io as pio
 from dash_bootstrap_templates import ThemeSwitchAIO
 from dash import html,dcc,Input,Output
 import dash_bootstrap_components as dbc
@@ -15,15 +14,6 @@ import pandas as pd
 from dash_bootstrap_templates import ThemeSwitchAIO
 import dash
 import geopandas as gpd
-import geobr
-from geodatasets import get_path
-from shapely.geometry import Point
-import matplotlib.pyplot as plt
-import contextily as cx
-import plotly.figure_factory as ff
-
-
-
 
 # #INGESTÃO DE DADOS
 df1=pd.read_excel('2001.xlsx')
@@ -43,16 +33,14 @@ df['MÊS NÚMERO']= df['MÊS'].dt.month
 df['MÊS NOME']= df['MÊS NÚMERO'].map(month_name)
 
 
-
 df1_semanal=pd.read_excel('semanal-estados-2004-a-2012.xlsx',skiprows=12)
 df2_semanal=pd.read_excel('semanal-estados-desde-2013.xlsx',skiprows=17)
-
 #REMOVENDOS OS ACENTOS DAS LINHAS
 for i in range(len(df1)):
     linha= df1_semanal.iloc[i,4]
     linha_sem_acentos = unicodedata.normalize('NFD', linha).encode('ascii', 'ignore').decode('utf-8')
     df1_semanal.iloc[i, 4] = linha_sem_acentos  
-    
+       
 df_semanal= pd.concat([df1_semanal,df2_semanal])
 
 
@@ -110,11 +98,19 @@ app.layout = html.Div(id='div1',
                                         dbc.Row([
                                             dbc.Col([
                                                 html.Label('Estados:'),
-                                                dcc.Dropdown([{'label': uf, 'value':uf} for uf in uf_list],id='dp-uf'),
+                                                dcc.Dropdown(
+                                                options=[{'label': uf, 'value':uf} for uf in uf_list],
+                                                id='dp-uf',
+                                                value='RIO DE JANEIRO'
+                                                ),
                                             ],sm=6),
                                             dbc.Col([
                                                 html.Label('Produtos:'),
-                                                dcc.Dropdown([{'label': product, 'value':product} for product in products_list],id='dp-product'),
+                                                dcc.Dropdown(
+                                                    options=[{'label': product, 'value':product} for product in products_list],
+                                                    id='dp-product',
+                                                    value='GASOLINA COMUM'
+                                                ),
                                             ],sm=6),
                                             
                                             dbc.Row([
@@ -125,7 +121,7 @@ app.layout = html.Div(id='div1',
                                                     min=2001,
                                                     max=2023,
                                                     marks=None,
-                                                    value=2001,
+                                                    value=2004,
                                                     step=1,
                                                     id='sd-year',
                                                     tooltip={"placement": "bottom", "always_visible": True} 
@@ -242,19 +238,15 @@ app.layout = html.Div(id='div1',
     Output('graph_dinamyc_week', 'figure'),
     Output('graph_the_most_expensive', 'figure'),
     Output('graph_region', 'figure'),
-    # Output('graph-comparative','figure'),
-    # Output('graph-region','figure'),
-    # Output('graph-max-min','figure'),
     
     Input('dp-uf', 'value'),
     Input('dp-product', 'value'),
     Input('sd-year', 'value'),
     Input(ThemeSwitchAIO.ids.switch('theme'),'value'),
-    # Input('check-option', 'value'),
+
 )    
 def graph_select(uf,product,year,theme):
     
-    #ESTADO
     var_graph_uf=graph_uf(uf,product,year,theme)
     var_graph_indicator_max=graph_indicator_max(uf,product,year,theme)
     var_graph_indicator_min=graph_indicator_min(uf,product,year,theme)
@@ -263,34 +255,9 @@ def graph_select(uf,product,year,theme):
     var_graph_the_most_expensive=graph_the_most_expensive(uf,product,year,theme)
     var_graph_top_5_cheapest=graph_top_5_cheapest(uf,product,year,theme)
     var_graph_region=graph_region(product,year,theme)
-    # var_dinamyc_week = graph_dinamyc_week(uf,product,year)
-    # var_graph_uf_x_br=graph_uf_x_br(product,uf,year)
-    # var_graph_max_min=graph_max_min(product,uf,year)
-    
-    #BRASIL
-    # var_graph_br = graph_br(product,year)
-    # var_graph_max_min_br=graph_max_min_br(product,year)
-    # var_graph_br_top3_cheap=graph_br_top3_cheap(product,year)
-    # var_graph_region=graph_region(product,year)
     
     return var_graph_uf,var_graph_indicator_max,var_graph_indicator_min,var_graph_max_x_min_x_br,var_graph_dinamyc_week,var_graph_the_most_expensive,var_graph_region
     
-    # if not option:
-    #     if year >=2004:
-    #         return var_graph_uf,var_graph_uf_x_br,var_dinamyc_week,var_graph_max_min
-    #     else:
-    #         return var_graph_uf,var_graph_uf_x_br,var_graph_region,var_graph_max_min
-
-    
-    # elif 'Brasil' in option:
-        
-    #     return var_graph_br,var_graph_br_top3_cheap,var_graph_region,var_graph_max_min_br
-        
-    
-    # else:
-    #     return None
-    
-# #ESTADO    
 def graph_uf(uf,product,year,theme):
     
     #VAR AUX
@@ -366,7 +333,7 @@ def graph_indicator_max(uf,product,year,theme):
             font=dict(size=20, color='green')
         )
         
-    fig_indicator_max.update_layout(main_config, height=200, template=template)
+    fig_indicator_max.update_layout(main_config, height=300, template=template)
         
         
     return fig_indicator_max
@@ -420,80 +387,54 @@ def graph_indicator_min(uf,product,year,theme):
             font=dict(size=20, color='green')
         )
         
-    fig_indicator_min.update_layout(main_config, height=200, template=template)
+    fig_indicator_min.update_layout(main_config, height=300, template=template)
     return fig_indicator_min
     
 def graph_max_x_min_x_br(uf,product,year,theme):
     
-    product = 'GASOLINA COMUM'
-    uf='AMAZONAS'
-    year=2020
-    theme='darkly'
-    
-    estados_brasil = {
-        'Acre': {'latitude': -9.0479, 'longitude': -70.5260, 'sigla': 'AC'},
-        'Alagoas': {'latitude': -9.5713, 'longitude': -36.7819, 'sigla': 'AL'},
-        'Amapa': {'latitude': 0.9020, 'longitude': -52.0036, 'sigla': 'AP'},
-        'Amazonas': {'latitude': -3.4168, 'longitude': -65.8561, 'sigla': 'AM'},
-        'Bahia': {'latitude': -12.9714, 'longitude': -38.5014, 'sigla': 'BA'},
-        'Ceara': {'latitude': -3.7172, 'longitude': -38.5433, 'sigla': 'CE'},
-        'Distrito Federal': {'latitude': -15.7801, 'longitude': -47.9292, 'sigla': 'DF'},
-        'Espirito Santo': {'latitude': -20.3155, 'longitude': -40.3128, 'sigla': 'ES'},
-        'Goias': {'latitude': -16.6864, 'longitude': -49.2643, 'sigla': 'GO'},
-        'Maranhao': {'latitude': -5.7945, 'longitude': -35.2110, 'sigla': 'MA'},
-        'Mato Grosso': {'latitude': -12.6819, 'longitude': -56.9211, 'sigla': 'MT'},
-        'Mato Grosso do Sul': {'latitude': -20.4428, 'longitude': -54.6464, 'sigla': 'MS'},
-        'Minas Gerais': {'latitude': -19.9167, 'longitude': -43.9345, 'sigla': 'MG'},
-        'Para': {'latitude': -1.4550, 'longitude': -48.5024, 'sigla': 'PA'},
-        'Paraiba': {'latitude': -7.1219, 'longitude': -34.8829, 'sigla': 'PB'},
-        'Parana': {'latitude': -25.4284, 'longitude': -49.2733, 'sigla': 'PR'},
-        'Pernambuco': {'latitude': -8.0476, 'longitude': -34.8770, 'sigla': 'PE'},
-        'Piaui': {'latitude': -5.0919, 'longitude': -42.8034, 'sigla': 'PI'},
-        'Rio de Janeiro': {'latitude': -22.9083, 'longitude': -43.1964, 'sigla': 'RJ'},
-        'Rio Grande do Norte': {'latitude': -5.7945, 'longitude': -35.2110, 'sigla': 'RN'},
-        'Rio Grande do Sul': {'latitude': -30.0346, 'longitude': -51.2177, 'sigla': 'RS'},
-        'Rondonia': {'latitude': -8.7608, 'longitude': -63.8999, 'sigla': 'RO'},
-        'Roraima': {'latitude': 2.8197, 'longitude': -60.6715, 'sigla': 'RR'},
-        'Santa Catarina': {'latitude': -27.5954, 'longitude': -48.5480, 'sigla': 'SC'},
-        'Sao Paulo': {'latitude': -23.5505, 'longitude': -46.6333, 'sigla': 'SP'},
-        'Sergipe': {'latitude': -10.9472, 'longitude': -37.0731, 'sigla': 'SE'},
-        'Tocantins': {'latitude': -10.9472, 'longitude': -37.0731, 'sigla': 'TO'}
-    }   
-
-    
-    df_lat = pd.DataFrame(
-        [(estado.upper(), dados['latitude'], dados['longitude'], dados['sigla']) for estado, dados in estados_brasil.items()],
-        columns=['ESTADO', 'LATITUDE', 'LONGITUDE', 'SIGLA']
-    )
-
-    
     template = template_theme1 if theme else template_theme2
     
-    df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA','MÊS NÚMERO','MÊS NOME']]
+    url_geojson_brasil_ibge = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson"
+    gdf_brasil = gpd.read_file(url_geojson_brasil_ibge)
     
-    df_resultado = pd.merge(df_filtered, df_lat, on='ESTADO', how='left')
 
-    final_df=df_resultado[(df_resultado['PRODUTO']==product) & (df_resultado['MÊS'].dt.year==year) & (df_resultado['ESTADO']==uf)]
-        
-    df_country = geobr.read_country(year=2020)
+    gdf_brasil['name'] = [unicodedata.normalize('NFD', line.upper()).encode('ascii', 'ignore').decode('utf-8') for line in gdf_brasil['name']]
     
-    df_country.crs = 'EPSG:4326'
     
-    df_wm = df_country.to_crs(epsg=3857)
-    for index, row in df_wm.iterrows():
-        name_state_normalized = unicodedata.normalize('NFKD', row['name_state']).encode('ASCII', 'ignore').decode('utf-8')
-        df_wm.at[index, 'name_state'] = name_state_normalized.upper()
-
-    ax = df_wm.plot(figsize=(10, 10), alpha=0.5, edgecolor="k")
-
-    cx.add_basemap(ax)
-
-    uf_geometry = df_wm[df_wm['name_state'] == 'ACRE']['geometry']
-
-    fig_mat=uf_geometry.plot(ax=ax, color='red', alpha=0.7, edgecolor='k')
+    gdf_select_uf = gdf_brasil[gdf_brasil['name'] == uf]
     
-    fig= ff.create_table([fig_mat])
+
+    fig = px.choropleth(
+        gdf_brasil,
+        geojson=gdf_brasil.geometry,
+
+        locations=gdf_brasil.index,
+        color=gdf_brasil['name'].apply(lambda x: 'blue' if x == uf else 'lightgreen'),
+
+        color_discrete_map={'Acre': 'lightgreen', uf: 'blue'},  # Pinte o estado desejado de azul
+        projection="mercator",
+
+    )
     
+    
+    fig.update_geos(
+        center=dict(lon=-55, lat=-15),
+        projection_scale=7,
+        visible=False,
+    )
+    
+    fig.update_layout(
+        showlegend=False,
+        legend_title_text='',
+        coloraxis_colorbar=dict(
+            title='',
+            tickvals=[0, 1],
+            ticktext=['Restante do País', uf],
+        )
+    )
+    fig.update_layout(main_config, height=300, template=template)
+
+
     return fig
         
 def graph_dinamyc_week(uf,product,year,theme):
@@ -533,7 +474,7 @@ def graph_dinamyc_week(uf,product,year,theme):
             
         )
     ),
-    fig.update_layout(main_config, height=200, template=template)
+    fig.update_layout(main_config, height=300, template=template)
     
     return fig    
    
@@ -587,7 +528,7 @@ def graph_top_5_cheapest(uf,product,year,theme):
         
         fig.add_trace(go.Scatter(x=df_estado['MÊS NÚMERO'],y=df_estado['PREÇO MÉDIO REVENDA'], mode='lines+markers', name=df_estado['ESTADO'].iloc[0]))
 
-    fig.update_layout(main_config, height=400, template=template)
+    fig.update_layout(main_config, height=300, template=template)
     
     return fig
 
@@ -607,134 +548,6 @@ def graph_region(product,year,theme):
     
     return fig 
     
-   
-# def graph_uf_x_br(product,uf,year):
-    
-#     # product = 'GASOLINA COMUM'
-#     # uf='AMAZONAS'
-#     # year=2008
-    
-#     df_filtered = df[['PRODUTO','REGIÃO','PREÇO MÉDIO REVENDA','MÊS','ESTADO']]
-    
-#     df_uf=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['ESTADO']==uf) & (df_filtered['MÊS'].dt.year==year)].groupby(['ESTADO','PRODUTO','MÊS'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-    
-#     df_br = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)].groupby(['PRODUTO','MÊS'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-    
-#     fig = go.Figure()
-#     fig.add_trace(go.Scatter(x=df_br['MÊS'].dt.month,y=df_br['PREÇO MÉDIO REVENDA'], mode='lines+markers', name='Brasil'))
-#     fig.add_trace(go.Scatter(x=df_uf['MÊS'].dt.month,y=df_uf['PREÇO MÉDIO REVENDA'], mode='lines', name=uf))
-    
-#     fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
-
-#     return fig
-
-
-
-# def graph_max_min(product,uf,year):
-    
-#     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
-    
-#     # product = 'GASOLINA COMUM'
-#     # uf='AMAZONAS'
-#     # year=2008
-    
-#     final_df=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['ESTADO']==uf) & (df_filtered['MÊS'].dt.year==year)].groupby(['PRODUTO','ESTADO','MÊS'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-    
-#     month_name = {1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'}
-    
-#     final_df['MÊS_'] =final_df['MÊS'].dt.month
-#     final_df['MÊS NOME'] = final_df['MÊS_'].map(month_name)
-    
-    
-#     df_max=final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].max())]
-#     df_min=final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].min())]
-    
-#     fig = go.Figure(
-#         data = [
-#             go.Bar(x=df_max['MÊS NOME'], y=df_max['PREÇO MÉDIO REVENDA'], name='Max'),
-#             go.Bar(x=df_min['MÊS NOME'], y=df_min['PREÇO MÉDIO REVENDA'], name='Min'),
-#         ]
-#     )
-    
-#     fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
-    
-#     return fig
-
- 
-# #BRASIL
-# def graph_br(product,year):
-      
-#     #VAR AUX
-#     # product ='GASOLINA COMUM'
-#     # year=2001
-#     # uf='SERGIPE'
-    
-#     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
-
-#     final_df = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)].groupby(['ESTADO'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-    
-#     return px.bar(final_df,y='PREÇO MÉDIO REVENDA',x='ESTADO', color='ESTADO')
-
-# def graph_br_top3_cheap(product,year):
-    
-#     # product = 'GASOLINA COMUM'
-#     # year=2015
-    
-#     df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
-    
-#     df_=df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)]
-    
-#     top_3=df_.groupby('ESTADO')['PREÇO MÉDIO REVENDA'].mean().sort_values(ascending=True).head(3)
-    
-#     ufs=top_3.index.to_list()
-    
-#     list_dict = []
-    
-#     for uf in ufs:      
-    
-#         df_dict=df_filtered[(df_filtered['ESTADO']==uf) & (df_filtered['MÊS'].dt.year==year) & (df_filtered['PRODUTO']==product)].groupby(['ESTADO','MÊS'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-#         df_dict['MONTH'] = df_dict['MÊS'].dt.month
-        
-#         dict_df=df_dict.to_dict()
-        
-#         list_dict.append(dict_df)
-        
-#     uf_1=pd.DataFrame(list_dict[0])
-#     uf_2=pd.DataFrame(list_dict[1])
-#     uf_3=pd.DataFrame(list_dict[2])
-    
-#     fig = go.Figure()
-    
-#     fig.add_trace(go.Scatter(x=uf_1['MONTH'],y=uf_1['PREÇO MÉDIO REVENDA'], mode='lines+markers', name=uf_1.iloc[1,0]))
-#     fig.add_trace(go.Scatter(x=uf_2['MONTH'],y=uf_2['PREÇO MÉDIO REVENDA'], mode='lines', name=uf_2.iloc[1,0]))
-#     fig.add_trace(go.Scatter(x=uf_3['MONTH'],y=uf_3['PREÇO MÉDIO REVENDA'], mode='markers', name=uf_3.iloc[1,0]))
-    
-#     fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
-    
-#     return fig
-
-
-
-# def graph_max_min_br(product,year):
-    
-    # df_filtered= df[['PRODUTO','ESTADO','MÊS','PREÇO MÉDIO REVENDA']]
-
-    # final_df = df_filtered[(df_filtered['PRODUTO']==product) & (df_filtered['MÊS'].dt.year==year)].groupby(['ESTADO'],as_index=False)['PREÇO MÉDIO REVENDA'].mean()
-    
-    # df_max = final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].max())]
-    
-    # df_min = final_df[(final_df['PREÇO MÉDIO REVENDA']==final_df['PREÇO MÉDIO REVENDA'].min())]
-    
-    # fig = go.Figure(
-    #     data=[
-    #         go.Bar(x=df_max['ESTADO'],y=df_max['PREÇO MÉDIO REVENDA'], name='Max', marker=dict(color='red')),
-    #         go.Bar(x=df_min['ESTADO'],y=df_min['PREÇO MÉDIO REVENDA'], name='Min', marker=dict(color='blue'))
-    #     ]
-    # )
-    
-    # fig.update_layout(margin=dict(l=0,r=0,t=20,b=20),height=300)
-    
-    # return fig
 
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8044)
+    app.run_server(debug=True,port=8051)

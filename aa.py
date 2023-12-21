@@ -1,33 +1,40 @@
-import plotly.graph_objects as go
+import geopandas as gpd
+import plotly.express as px
 
-import pandas as pd
+# Carregar o GeoJSON dos estados do Brasil
+url_geojson_brasil_ibge = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson"
+gdf_brasil = gpd.read_file(url_geojson_brasil_ibge)
 
-df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/2014_us_cities.csv')
-df.head()
+# Adicionar coluna com a cor desejada
+gdf_brasil['color'] = 'Restante do País'
+gdf_brasil.loc[gdf_brasil['sigla'] == 'AC', 'color'] = 'Acre'
 
-df['text'] = df['name'] + '<br>Population ' + (df['pop']/1e6).astype(str)+' million'
-limits = [(0,2),(3,10),(11,20),(21,50),(50,3000)]
-colors = ["royalblue","crimson","lightseagreen","orange","lightgrey"]
-cities = []
-scale = 5000
+# Criar o mapa choropleth com cores e legenda personalizadas
+fig = px.choropleth(
+    gdf_brasil,
+    geojson=gdf_brasil.geometry,
+    locations=gdf_brasil.index,
+    color='color',
+    color_discrete_map={'Acre': 'blue', 'Restante do País': 'lightgreen'},
+    projection="mercator",
+)
 
-fig = go.Figure()
+# Configurar layout do mapa
+fig.update_geos(
+    center=dict(lon=-55, lat=-15),
+    projection_scale=5,
+    visible=False,
+)
 
-fig.add_trace(go.Scattergeo(
-    locationmode= 'USA-states',
-    lat=[-9.974],
-    lon=[-67.8076],
-    text='ACRE',
-))
-
+# Configurar legenda
 fig.update_layout(
-    title_text='2023',
-    showlegend=True,
-    geo = dict(
-        scope='south america',
-        landcolor= 'rgb(217, 217, 217)',
+    legend_title_text='',
+    coloraxis_colorbar=dict(
+        title='',
+        tickvals=[0, 1],
+        ticktext=['Restante do País', 'Acre'],
     )
 )
 
-
-
+# Mostrar o mapa
+fig.show()
