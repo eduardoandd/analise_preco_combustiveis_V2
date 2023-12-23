@@ -95,11 +95,15 @@ main_config = {
 }
 config_graph={"displayModeBar":False, "showTips":False}
 
+url_geojson_brasil_ibge = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson"
+gdf_brasil = gpd.read_file(url_geojson_brasil_ibge)
+gdf_brasil['name'] = [unicodedata.normalize('NFD', line.upper()).encode('ascii', 'ignore').decode('utf-8') for line in gdf_brasil['name']]
+
 
 #========= Layout =============
 
 app = dash.Dash(
-    external_stylesheets=[dbc.themes.BOOTSTRAP]
+    external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP]
 )
 
 app.layout = html.Div(id='div1',
@@ -112,11 +116,11 @@ app.layout = html.Div(id='div1',
                     dbc.CardBody([
                         dbc.Row([
                             dbc.Col([
-                                html.I(className='fa fa-balance-scale', style={'font-size': '300%'})
+                                html.I(className='bi bi-fuel-pump', style={'font-size': '290%'})
                             ], sm=2,style={'margin-bottom': '5px;'}),
                             dbc.Col([
                                 html.Legend('Fuel Price Brazil')
-                            ], sm=8, align='center',style={'margin-bottom': '5px;'}),
+                            ], sm=7, align='center',style={'margin-bottom': '5px;'}),
                              dbc.Col([
                                 ThemeSwitchAIO(aio_id="theme", themes=[url_theme1, url_theme2])
                             ],style={'margin-bottom': '5px;'})
@@ -135,7 +139,8 @@ app.layout = html.Div(id='div1',
                                                 dcc.Dropdown(
                                                 options=[{'label': uf, 'value':uf} for uf in uf_list],
                                                 id='dp-uf',
-                                                value='RIO DE JANEIRO'
+                                                value='RIO DE JANEIRO',
+                                                className='custom-dropdown'
                                                 ),
                                             ],sm=6),
                                             dbc.Col([
@@ -143,7 +148,8 @@ app.layout = html.Div(id='div1',
                                                 dcc.Dropdown(
                                                     options=[{'label': product, 'value':product} for product in products_list],
                                                     id='dp-product',
-                                                    value='GASOLINA COMUM'
+                                                    value='GASOLINA COMUM',
+                                                    className='custom-dropdown'
                                                 ),
                                             ],sm=6),
                                             
@@ -175,12 +181,6 @@ app.layout = html.Div(id='div1',
             dbc.Col([
                 dbc.Card([
                     dbc.CardBody([
-                        dbc.Row(
-                            dbc.Col(
-                                html.Legend('Top Consultores por Equipe')
-                            )
-                        ),
-                        
                         dbc.Row([
                             dbc.Col([
                                 dcc.Graph(id='graph-uf', className='dbc')
@@ -292,8 +292,17 @@ def graph_uf(uf,product,year,theme):
     
     fig=px.bar(df_query, y='PREÇO MÉDIO REVENDA',x='MÊS NÚMERO',color='MÊS NOME')
     
-    fig.update_layout(main_config, height=260, template=template)
-
+    fig.update_layout(
+        main_config, 
+        height=300, 
+        template=template, 
+        title=f'<b>Variação Mensal - {product} em {uf} ({year})</b>',
+        margin=dict(t=55),
+        title_font=dict(size=18, family='Arial')
+    )
+    
+    fig.update_xaxes(title_text='')
+    fig.update_yaxes(title_text='')
     
     return fig
 
@@ -444,17 +453,7 @@ def graph_indicator_min(uf,product,year,theme):
 def select_map(uf,theme):
     
     template = template_theme1 if theme else template_theme2
-    
-    url_geojson_brasil_ibge = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson"
-    gdf_brasil = gpd.read_file(url_geojson_brasil_ibge)
-    
-
-    gdf_brasil['name'] = [unicodedata.normalize('NFD', line.upper()).encode('ascii', 'ignore').decode('utf-8') for line in gdf_brasil['name']]
-    
-    
-    gdf_select_uf = gdf_brasil[gdf_brasil['name'] == uf]
-    
-
+     
     fig = px.choropleth(
         gdf_brasil,
         geojson=gdf_brasil.geometry,
@@ -534,7 +533,14 @@ def graph_dinamyc_week(uf,product,year,theme):
             
         )
     ),
-    fig.update_layout(main_config, height=300, template=template)
+    fig.update_layout(
+        main_config, 
+        height=300, 
+        template=template, 
+        title=f'<b>Variação SEMANAL - {product} em {uf} ({year})</b>',
+        margin=dict(t=55),
+        title_font=dict(size=18, family='Arial')
+    )
     
     return fig    
 
@@ -574,7 +580,14 @@ def graph_top_5_cheapest(uf,product,year,theme):
         
         fig.add_trace(go.Scatter(x=df_estado['MÊS NÚMERO'],y=df_estado['PREÇO MÉDIO REVENDA'], mode='lines+markers', name=df_estado['ESTADO'].iloc[0]))
 
-    fig.update_layout(main_config, height=300, template=template)
+    fig.update_layout(
+        main_config, 
+        height=300, 
+        template=template, 
+        title=f'<b>TOP 5 MAIS BARATOS</b>',
+        margin=dict(t=55),
+        title_font=dict(size=18, family='Arial')
+    )
     
     return fig
 
@@ -601,10 +614,17 @@ def graph_region(product,year,theme):
         
     fig = px.bar(final_df, x='PREÇO MÉDIO REVENDA', y='REGIÃO', color='REGIÃO', orientation='h', barmode='group')
     
-    fig.update_layout(main_config, height=300, template=template)
+    fig.update_layout(
+        main_config, 
+        height=300, 
+        template=template, 
+        title=f'<b>Variação orientada pela REGIÃO</b>',
+        margin=dict(t=55),
+        title_font=dict(size=18, family='Arial')
+    )
     
     return fig 
     
 
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8062)
+    app.run_server(debug=True,port=8064)

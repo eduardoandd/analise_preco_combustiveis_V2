@@ -1,0 +1,13 @@
+.Select-control {
+
+    color:black;
+  }
+  
+.Select-menu-outer {
+    background-color: white;
+    color: black;
+}
+
+.Select-value-label {
+    color: black !important;
+}
