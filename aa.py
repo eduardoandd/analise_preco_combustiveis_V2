@@ -38,3 +38,4 @@ fig.update_layout(
 
 # Mostrar o mapa
 fig.show()
+
