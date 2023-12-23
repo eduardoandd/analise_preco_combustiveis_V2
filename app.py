@@ -343,7 +343,7 @@ def graph_indicator_max(uf,product,year,theme):
     
     variacao_porcentual_max= ((df_max['PREÇO MÉDIO REVENDA'].max() - df_ano_interior['PREÇO MÉDIO REVENDA'].max()) /  df_ano_interior['PREÇO MÉDIO REVENDA'].max()) * 100
     
-    title_text = f'<span style="font-size:90%; margin-top: 100px;"><b>{df_max["MÊS NOME"].iloc[0]}</b> - MÊS MAIS <span style="color: red;">CARO</span></span>'
+    title_text = f'<span style="font-size:80%; margin-top: 100px;"><b>{df_max["MÊS NOME"].iloc[0]}</b> - MÊS MAIS <span style="color: red;">CARO</span></span>'
         
     fig_indicator_max= go.Figure(
             go.Indicator(
@@ -361,7 +361,7 @@ def graph_indicator_max(uf,product,year,theme):
             showarrow=False,
             x=0.5,
             y=0.20,
-            font=dict(size=20, color='red')
+            font=dict(size=17, color='red')
         )
     else:    
         fig_indicator_max.add_annotation(
@@ -369,7 +369,7 @@ def graph_indicator_max(uf,product,year,theme):
             showarrow=False,
             x=0.5,
             y=0.20,
-            font=dict(size=20, color='green')
+            font=dict(size=17, color='green')
         )
         
     fig_indicator_max.update_layout(main_config, height=300, template=template)
@@ -412,7 +412,7 @@ def graph_indicator_min(uf,product,year,theme):
     
     variacao_porcentual_min= ((df_min['PREÇO MÉDIO REVENDA'].min() - df_ano_interior['PREÇO MÉDIO REVENDA'].min()) /  df_ano_interior['PREÇO MÉDIO REVENDA'].min()) * 100
     
-    title_text = f'<span style="font-size:90%;"><b>{df_min["MÊS NOME"].iloc[0]}</b> - MÊS MAIS <span style="color: green;">BARATO</span></span>'
+    title_text = f'<span style="font-size:80%;"><b>{df_min["MÊS NOME"].iloc[0]}</b> - MÊS MAIS <span style="color: green;">BARATO</span></span>'
 
     fig_indicator_min= go.Figure(
             go.Indicator(
@@ -430,7 +430,7 @@ def graph_indicator_min(uf,product,year,theme):
             showarrow=False,
             x=0.5,
             y=0.20,
-            font=dict(size=20, color='red')
+            font=dict(size=17, color='red')
         )
     else:    
         fig_indicator_min.add_annotation(
@@ -438,7 +438,7 @@ def graph_indicator_min(uf,product,year,theme):
             showarrow=False,
             x=0.5,
             y=0.20,
-            font=dict(size=20, color='green')
+            font=dict(size=17, color='green')
         )
         
     fig_indicator_min.update_layout(main_config, height=300, template=template)
