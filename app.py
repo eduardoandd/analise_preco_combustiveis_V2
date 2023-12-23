@@ -243,7 +243,7 @@ app.layout = html.Div(id='div1',
                 dbc.Row([
                     dbc.Card([
                         dbc.CardBody([
-                            dcc.Graph(id='graph_the_most_expensive', className='dbc', config=config_graph)
+                            dcc.Graph(id='graph_top5_cheap', className='dbc', config=config_graph)
                         ])
                     ], style=tab_card)
                 ]),
@@ -262,34 +262,14 @@ app.layout = html.Div(id='div1',
         
 ])
 
-#PRINCIPAL     
+
 @app.callback(
     Output('graph-uf', 'figure'),
-    Output('graph_indicator_max', 'figure'),
-    Output('graph_indicator_min', 'figure'),
-    Output('graph_max_x_min_x_br', 'figure'),
-    Output('graph_dinamyc_week', 'figure'),
-    Output('graph_the_most_expensive', 'figure'),
-    Output('graph_region', 'figure'),
-    
     Input('dp-uf', 'value'),
     Input('dp-product', 'value'),
     Input('sd-year', 'value'),
     Input(ThemeSwitchAIO.ids.switch('theme'),'value'),
-
 )    
-def graph_select(uf,product,year,theme):
-    
-    var_graph_uf=graph_uf(uf,product,year,theme)
-    var_graph_indicator_max=graph_indicator_max(uf,product,year,theme)
-    var_graph_indicator_min=graph_indicator_min(uf,product,year,theme)
-    var_map=select_map(uf,product,year,theme)
-    var_graph_dinamyc_week=graph_dinamyc_week(uf,product,year,theme)
-    var_graph_top_5_cheapest=graph_top_5_cheapest(uf,product,year,theme)
-    var_graph_region=graph_region(product,year,theme)
-    
-    return var_graph_uf,var_graph_indicator_max,var_graph_indicator_min,var_map,var_graph_dinamyc_week,var_graph_top_5_cheapest,var_graph_region
-    
 def graph_uf(uf,product,year,theme):
     
     #VAR AUX
@@ -317,6 +297,13 @@ def graph_uf(uf,product,year,theme):
     
     return fig
 
+@app.callback(
+    Output('graph_indicator_max', 'figure'),
+    Input('dp-uf', 'value'),
+    Input('dp-product', 'value'),
+    Input('sd-year', 'value'),
+    Input(ThemeSwitchAIO.ids.switch('theme'),'value'),
+)   
 def graph_indicator_max(uf,product,year,theme):
     
     # product ='GASOLINA COMUM'
@@ -380,7 +367,14 @@ def graph_indicator_max(uf,product,year,theme):
         
         
     return fig_indicator_max
-    
+
+@app.callback(
+    Output('graph_indicator_min', 'figure'),
+    Input('dp-uf', 'value'),
+    Input('dp-product', 'value'),
+    Input('sd-year', 'value'),
+    Input(ThemeSwitchAIO.ids.switch('theme'),'value'),
+)      
 def graph_indicator_min(uf,product,year,theme):
     
     template = template_theme1 if theme else template_theme2
@@ -441,8 +435,13 @@ def graph_indicator_min(uf,product,year,theme):
     fig_indicator_min.update_layout(main_config, height=300, template=template)
     
     return fig_indicator_min
-    
-def select_map(uf,product,year,theme):
+
+@app.callback(
+    Output('graph_max_x_min_x_br', 'figure'),
+    Input('dp-uf', 'value'),
+    Input(ThemeSwitchAIO.ids.switch('theme'),'value'),
+)       
+def select_map(uf,theme):
     
     template = template_theme1 if theme else template_theme2
     
@@ -489,7 +488,14 @@ def select_map(uf,product,year,theme):
 
 
     return fig
-        
+
+@app.callback(
+    Output('graph_dinamyc_week', 'figure'),
+    Input('dp-uf', 'value'),
+    Input('dp-product', 'value'),
+    Input('sd-year', 'value'),
+    Input(ThemeSwitchAIO.ids.switch('theme'),'value'),
+)          
 def graph_dinamyc_week(uf,product,year,theme):
     
     # product = 'GASOLINA COMUM'
@@ -532,6 +538,13 @@ def graph_dinamyc_week(uf,product,year,theme):
     
     return fig    
 
+@app.callback(
+    Output('graph_top5_cheap', 'figure'),
+    Input('dp-uf', 'value'),
+    Input('dp-product', 'value'),
+    Input('sd-year', 'value'),
+    Input(ThemeSwitchAIO.ids.switch('theme'),'value'),
+)
 def graph_top_5_cheapest(uf,product,year,theme):
     
     # product = 'GASOLINA COMUM'
@@ -565,6 +578,12 @@ def graph_top_5_cheapest(uf,product,year,theme):
     
     return fig
 
+@app.callback(
+    Output('graph_region', 'figure'),
+    Input('dp-product', 'value'),
+    Input('sd-year', 'value'),
+    Input(ThemeSwitchAIO.ids.switch('theme'),'value'),
+)
 def graph_region(product,year,theme):
     
     query = f'''
@@ -588,4 +607,4 @@ def graph_region(product,year,theme):
     
 
 if __name__ == '__main__':
-    app.run_server(debug=True,port=8061)
+    app.run_server(debug=True,port=8062)
